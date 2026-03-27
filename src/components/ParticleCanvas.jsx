@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 // PARTICLE CANVAS
 // 160 partículas animadas com interação de mouse.
 // Props:
-//   dark → boolean (altera as cores das partículas)
+//   dark    → boolean (altera as cores das partículas)
+//   visible → boolean (mostra/esconde as partículas)
 // ─────────────────────────────────────────────────────────────────────────────
-export default function ParticleCanvas({ dark }) {
+export default function ParticleCanvas({ dark, visible = true }) {
   const canvasRef    = useRef(null);
   const animRef      = useRef(null);
   const particlesRef = useRef([]);
@@ -124,7 +125,9 @@ export default function ParticleCanvas({ dark }) {
         inset:         0,
         zIndex:        0,
         pointerEvents: "none",
-        opacity:       dark ? 0.75 : 0.85,
+        // Fade suave ao ligar/desligar
+        opacity:       visible ? (dark ? 0.75 : 0.85) : 0,
+        transition:    "opacity 0.6s ease",
       }}
     />
   );

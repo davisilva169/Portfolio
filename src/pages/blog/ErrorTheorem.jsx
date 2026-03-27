@@ -1,638 +1,708 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useState, useEffect, useRef } from 'react';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
 
-/* ─────────────────────────────────────────────
-   KaTeX loader — isolado do React
-───────────────────────────────────────────── */
-let katexReady = false;
-let katexCallbacks = [];
+import Fade       from '../../components/Fade';
+import BackButton from '../../components/BackButton';
 
-function loadKatex(cb) {
-  if (katexReady) { cb(); return; }
-  katexCallbacks.push(cb);
-  if (document.getElementById("katex-script")) return;
-
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
-  document.head.appendChild(link);
-
-  const script = document.createElement("script");
-  script.id = "katex-script";
-  script.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js";
-  script.onload = () => {
-    katexReady = true;
-    katexCallbacks.forEach((fn) => fn());
-    katexCallbacks = [];
-  };
-  script.onerror = () => { katexCallbacks = []; };
-  document.head.appendChild(script);
-}
-
-/* ─────────────────────────────────────────────
-   Componente Tex (sem conflito com Math global)
-───────────────────────────────────────────── */
-function Tex({ tex, display, color }) {
-  const ref = useRef(null);
-  const [ready, setReady] = useState(katexReady);
-
-  useEffect(() => {
-    if (ready) return;
-    loadKatex(() => setReady(true));
-  }, [ready]);
-
-  useEffect(() => {
-    if (!ready || !ref.current || !tex) return;
-    try {
-      window.katex.render(tex, ref.current, {
-        displayMode: !!display,
-        throwOnError: false,
-      });
-      if (color) ref.current.style.color = color;
-    } catch (_) {}
-  }, [ready, tex, display, color]);
-
-  const spanStyle = display
-    ? { display: "block", margin: "1.4rem auto", textAlign: "center" }
-    : { display: "inline-block", margin: "0 2px" };
-
-  if (!ready) {
-    return (
-      <span style={{
-        ...spanStyle,
-        fontFamily: "'Courier New', monospace",
-        fontSize: display ? "1.05rem" : "0.9em",
-        color: color || "inherit",
-        opacity: 0.85,
-      }}>
-        {tex}
-      </span>
-    );
-  }
-
-  return <span ref={ref} style={spanStyle} />;
-}
-
-/* ─────────────────────────────────────────────
-   Sregor Gamsa — SVG (usando globalThis.Math)
-───────────────────────────────────────────── */
-function InsectIllustration({ accent, bgColor }) {
-  const G = globalThis.Math;
-  const ticks = [0,1,2,3,4,5,6,7,8,9,10,11].map((i) => {
-    const a = (i / 12) * G.PI * 2 - G.PI / 2;
-    return { x1: 282 + 15*G.cos(a), y1: 132 + 15*G.sin(a),
-             x2: 282 + 17*G.cos(a), y2: 132 + 17*G.sin(a) };
-  });
+/* ─── Divisor padrão do site (igual ao usado em Research, Projects, etc.) ── */
+const Divider = ({ t = {} }) => {
+  const accent = t.accentSolid || t.accent || "#b58cff";
 
   return (
-    <svg viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg"
-      style={{ width: "100%", maxWidth: 340,
-        filter: "drop-shadow(0 8px 32px rgba(167,139,250,0.18))" }}>
-      <ellipse cx="170" cy="200" rx="120" ry="30" fill={accent} opacity="0.07" />
-      <rect x="30" y="195" width="280" height="8" rx="4" fill={accent} opacity="0.18" />
-      <rect x="20" y="200" width="300" height="50" rx="6" fill={accent} opacity="0.07" />
-      <ellipse cx="170" cy="185" rx="62" ry="28" fill="#1a1030" stroke={accent} strokeWidth="1.5" />
-      {[0,1,2,3].map((i) => (
-        <ellipse key={i} cx={170} cy={178+i*9} rx={54-i*5} ry={5}
-          fill="none" stroke={accent} strokeWidth="0.8" opacity="0.5" />
-      ))}
-      <ellipse cx="170" cy="157" rx="22" ry="18" fill="#1a1030" stroke={accent} strokeWidth="1.5" />
-      <circle cx="162" cy="154" r="5" fill={bgColor} stroke={accent} strokeWidth="1" />
-      <circle cx="178" cy="154" r="5" fill={bgColor} stroke={accent} strokeWidth="1" />
-      <circle cx="162" cy="154" r="2.5" fill={accent} opacity="0.9" />
-      <circle cx="178" cy="154" r="2.5" fill={accent} opacity="0.9" />
-      <circle cx="163" cy="153" r="1" fill="white" opacity="0.6" />
-      <circle cx="179" cy="153" r="1" fill="white" opacity="0.6" />
-      <path d="M158 145 Q140 120 120 108" stroke={accent} strokeWidth="1.2" fill="none" opacity="0.8" />
-      <path d="M182 145 Q200 120 220 108" stroke={accent} strokeWidth="1.2" fill="none" opacity="0.8" />
-      <circle cx="120" cy="108" r="3" fill={accent} opacity="0.6" />
-      <circle cx="220" cy="108" r="3" fill={accent} opacity="0.6" />
-      <path d="M130 178 Q95 158 75 142" stroke={accent} strokeWidth="1.4" fill="none" />
-      <path d="M120 188 Q80 178 55 165" stroke={accent} strokeWidth="1.4" fill="none" />
-      <path d="M125 198 Q90 200 68 210" stroke={accent} strokeWidth="1.4" fill="none" />
-      <path d="M210 178 Q245 158 265 142" stroke={accent} strokeWidth="1.4" fill="none" />
-      <path d="M220 188 Q260 178 285 165" stroke={accent} strokeWidth="1.4" fill="none" />
-      <path d="M215 198 Q250 200 272 210" stroke={accent} strokeWidth="1.4" fill="none" />
-      <rect x="255" y="105" width="55" height="55" rx="5" fill="#0d0d18" stroke={accent} strokeWidth="1" opacity="0.9" />
-      <circle cx="282" cy="132" r="18" fill="#0a0a14" stroke={accent} strokeWidth="1" />
-      <line x1="282" y1="132" x2="282" y2="118" stroke={accent} strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="282" y1="132" x2="293" y2="136" stroke={accent} strokeWidth="1" strokeLinecap="round" opacity="0.7" />
-      <circle cx="282" cy="132" r="2" fill={accent} />
-      {ticks.map((tk, i) => (
-        <line key={i} x1={tk.x1} y1={tk.y1} x2={tk.x2} y2={tk.y2}
-          stroke={accent} strokeWidth="0.8" opacity="0.5" />
-      ))}
-      <text x="55"  y="80" fontSize="22" fill={accent} opacity="0.30" fontFamily="Georgia, serif" fontStyle="italic">?</text>
-      <text x="170" y="55" fontSize="28" fill={accent} opacity="0.50" fontFamily="Georgia, serif" fontStyle="italic">?</text>
-      <text x="295" y="75" fontSize="18" fill={accent} opacity="0.25" fontFamily="Georgia, serif" fontStyle="italic">?</text>
-      <text x="40"  y="130" fontSize="11" fill={accent} opacity="0.35" fontFamily="monospace">P = 1/n</text>
-      <text x="220" y="80"  fontSize="9"  fill={accent} opacity="0.25" fontFamily="monospace">P(C₂|E₁)=1/(n-1)</text>
-    </svg>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Árvore de probabilidade
-───────────────────────────────────────────── */
-function ProbTree({ accent }) {
-  const dim = "rgba(167,139,250,0.35)";
-  const red = "#f87171";
-  const green = "#34d399";
-  return (
-    <svg viewBox="0 0 500 300" style={{ width: "100%", maxWidth: 500 }}>
-      <circle cx="250" cy="30" r="16" fill="#1a1030" stroke={accent} strokeWidth="1.5" />
-      <text x="250" y="35" textAnchor="middle" fontSize="11" fill={accent} fontFamily="monospace">start</text>
-      <line x1="250" y1="46" x2="130" y2="120" stroke={accent} strokeWidth="1.2" strokeDasharray="4 2" />
-      <text x="165" y="88" fontSize="10" fill={dim} textAnchor="middle" fontFamily="monospace">P(E₁)=(n-1)/n</text>
-      <line x1="250" y1="46" x2="370" y2="120" stroke={red} strokeWidth="1.2" strokeDasharray="4 2" opacity="0.7" />
-      <text x="335" y="88" fontSize="10" fill={red} textAnchor="middle" fontFamily="monospace" opacity="0.8">P(C₁)=1/n</text>
-      <circle cx="130" cy="130" r="16" fill="#1a1030" stroke={accent} strokeWidth="1.5" />
-      <text x="130" y="135" textAnchor="middle" fontSize="10" fill={accent} fontFamily="monospace">E₁</text>
-      <circle cx="370" cy="130" r="16" fill="#1a1030" stroke={red} strokeWidth="1.5" opacity="0.8" />
-      <text x="370" y="135" textAnchor="middle" fontSize="10" fill={red} fontFamily="monospace" opacity="0.9">C₁</text>
-      <line x1="130" y1="146" x2="80"  y2="220" stroke={green} strokeWidth="1.2" strokeDasharray="4 2" />
-      <line x1="130" y1="146" x2="180" y2="220" stroke={red}   strokeWidth="1.2" strokeDasharray="4 2" opacity="0.5" />
-      <text x="90"  y="188" fontSize="9" fill={green} textAnchor="middle" fontFamily="monospace">1/(n-1)</text>
-      <text x="175" y="188" fontSize="9" fill={red}   textAnchor="middle" fontFamily="monospace" opacity="0.7">(n-2)/(n-1)</text>
-      <line x1="370" y1="146" x2="370" y2="210" stroke={red} strokeWidth="1" opacity="0.4" />
-      <text x="370" y="228" textAnchor="middle" fontSize="10" fill={red} fontFamily="monospace" opacity="0.7">P = 0</text>
-      <circle cx="80"  cy="235" r="14" fill="#0d1f15" stroke={green} strokeWidth="1.5" />
-      <text x="80"  y="239" textAnchor="middle" fontSize="10" fill={green} fontFamily="monospace">{"✓ C₂"}</text>
-      <circle cx="180" cy="235" r="14" fill="#1f0d0d" stroke={red} strokeWidth="1.5" opacity="0.7" />
-      <text x="180" y="239" textAnchor="middle" fontSize="10" fill={red} fontFamily="monospace" opacity="0.8">{"✗"}</text>
-      <rect x="278" y="210" width="190" height="58" rx="6" fill="#0d0d18" stroke={accent} strokeWidth="1" opacity="0.9" />
-      <text x="373" y="229" textAnchor="middle" fontSize="10" fill={dim} fontFamily="monospace">total success:</text>
-      <text x="373" y="247" textAnchor="middle" fontSize="11" fill={accent} fontFamily="monospace">(n-1)/n · 1/(n-1) = 1/n</text>
-      <text x="373" y="262" textAnchor="middle" fontSize="11" fill={accent} fontFamily="monospace" fontWeight="bold">= same as before</text>
-    </svg>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Utilitários de layout
-───────────────────────────────────────────── */
-function Reveal({ children, delay = 0 }) {
-  const ref = useRef(null);
-  const [vis, setVis] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect(); } },
-      { threshold: 0.08 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? "translateY(0)" : "translateY(24px)",
-      transition: `opacity 0.65s ease ${delay}s, transform 0.65s ease ${delay}s`,
-    }}>
-      {children}
+    <div style={{ margin: "3.5rem 0", alignItems: 'center' }}>
+      <div
+        style={{
+          width: "50px",
+          height: "3px",
+          background: `linear-gradient(90deg, ${accent} 0%, ${accent}80 55%, transparent 100%)`,
+          borderRadius: "999px",
+        }}
+      />
     </div>
   );
-}
-
-function Divider({ accent }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "3rem 0" }}>
-      <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${accent}44)` }} />
-      <span style={{ color: accent, fontSize: "1.1rem", opacity: 0.5 }}>◆</span>
-      <div style={{ flex: 1, height: "1px", background: `linear-gradient(to left, transparent, ${accent}44)` }} />
-    </div>
-  );
-}
-
-function Pullquote({ children, accent }) {
-  return (
-    <blockquote style={{
-      margin: "2.5rem 0", padding: "1.4rem 2rem",
-      borderLeft: `3px solid ${accent}`,
-      background: `linear-gradient(to right, ${accent}10, transparent)`,
-      fontFamily: "'Cormorant Garamond', Georgia, serif",
-      fontSize: "1.25rem", fontStyle: "italic",
-      color: "#e2d9f3", lineHeight: 1.65,
-    }}>
-      {children}
-    </blockquote>
-  );
-}
-
-const COLORS = {
-  purple: { border: "#a78bfa", bg: "rgba(167,139,250,0.06)", glow: "rgba(167,139,250,0.14)" },
-  green:  { border: "#34d399", bg: "rgba(52,211,153,0.06)",  glow: "rgba(52,211,153,0.11)"  },
-  red:    { border: "#f87171", bg: "rgba(248,113,113,0.06)", glow: "rgba(248,113,113,0.11)" },
-  gold:   { border: "#fbbf24", bg: "rgba(251,191,36,0.06)",  glow: "rgba(251,191,36,0.11)"  },
 };
 
-function FormulaBlock({ children, label, highlight }) {
-  const c = COLORS[highlight] || COLORS.purple;
+/* ─── Label de seção ─────────────────────────────────────────────────────── */
+const SectionLabel = ({ number, label, t }) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <span style={{
+      fontFamily: 'DM Mono, monospace',
+      fontSize: '0.68rem',
+      color: t.accent,
+      letterSpacing: '0.2em',
+      textTransform: 'uppercase',
+      opacity: 0.9,
+    }}>
+      {number < 10 ? `0${number}` : number} · {label}
+    </span>
+  </div>
+);
+
+/* ─── Título de seção ────────────────────────────────────────────────────── */
+const SectionTitle = ({ children, t }) => (
+  <h2 style={{
+    fontFamily: 'Cormorant Garamond, serif',
+    fontSize: 'clamp(1.6rem, 2.8vw, 2.1rem)',
+    fontWeight: 600,
+    color: t.text,
+    margin: '0 0 1.4rem',
+    lineHeight: 1.15,
+  }}>
+    {children}
+  </h2>
+);
+
+/* ─── Bloco de equação colorido ─────────────────────────────────────────── */
+/* Fix: paddingTop aumentado para não cortar a label tag que fica acima      */
+const EqBlock = ({ math, color, t, label }) => {
+  const borderColor = color || t.accent;
   return (
     <div style={{
-      margin: "2rem 0", padding: "1.5rem 2rem",
-      background: c.bg,
-      border: `1px solid ${c.border}`,
-      borderLeft: `4px solid ${c.border}`,
-      borderRadius: "0 8px 8px 0",
-      boxShadow: `0 0 22px ${c.glow}`,
-      position: "relative",
+      margin: '2.5rem 0',
+      /* top padding extra quando há label para ela não ficar cortada */
+      padding: label ? '2rem 2rem 1.4rem' : '1.4rem 2rem',
+      background: `${borderColor}0a`,
+      borderLeft: `3px solid ${borderColor}`,
+      borderRadius: '0 8px 8px 0',
+      boxShadow: `0 0 20px ${borderColor}14`,
+      position: 'relative',
+      overflowX: 'auto',
     }}>
       {label ? (
         <span style={{
-          position: "absolute", top: -11, left: 16,
-          background: c.border, color: "#06060a",
-          fontSize: "0.63rem", fontFamily: "'DM Mono', monospace",
-          padding: "2px 10px", borderRadius: 20,
-          letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700,
+          position: 'absolute', top: -11, left: 16,
+          background: borderColor, color: '#06060a',
+          fontSize: '0.6rem', fontFamily: 'DM Mono, monospace',
+          padding: '2px 10px', borderRadius: 20,
+          letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
+          /* garante que a tag não seja cortada pelo overflow do pai */
+          whiteSpace: 'nowrap',
         }}>
           {label}
         </span>
       ) : null}
-      {children}
+      <div style={{ color: t.text }}>
+        <BlockMath math={math} />
+      </div>
     </div>
   );
-}
+};
 
-function IllustrationBox({ children, accent, cardBg, caption }) {
+/* ─── Pullquote ──────────────────────────────────────────────────────────── */
+const Pullquote = ({ children, t }) => (
+  <blockquote style={{
+    margin: '2.5rem 0',
+    padding: '1.2rem 2rem',
+    borderLeft: `2px solid ${t.accent}`,
+    background: `linear-gradient(to right, ${t.accent}0d, transparent)`,
+    fontFamily: 'Cormorant Garamond, serif',
+    fontSize: '1.3rem',
+    fontStyle: 'italic',
+    color: t.textDim,
+    lineHeight: 1.65,
+  }}>
+    {children}
+  </blockquote>
+);
+
+/* ─── Scroll indicator (igual ao da Home) ────────────────────────────────── */
+export const ScrollIndicator = ({ t }) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const scrolled = window.scrollY;
+      const maxScroll =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      setVisible(scrolled < maxScroll - 120);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center",
-      gap: "1rem", margin: "3rem 0", padding: "2rem", background: cardBg,
-      borderRadius: 12, border: `1px solid ${accent}22` }}>
-      {children}
-      {caption ? (
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem",
-          color: "#9d8ec0", textAlign: "center", letterSpacing: "0.06em", margin: 0 }}>
-          {caption}
-        </p>
-      ) : null}
+    <div
+      style={{
+        position: "fixed",
+        left: "2.2rem",
+        bottom: "2.5rem",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "10px",
+        opacity: visible ? 0.55 : 0,
+        transition: "opacity 0.6s ease",
+        zIndex: 10,
+        pointerEvents: "none",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: "0.55rem",
+          letterSpacing: "0.22em",
+          color: t.accentSolid,
+          writingMode: "vertical-rl",
+          textTransform: "uppercase",
+        }}
+      >
+        scroll
+      </span>
+
+      <div
+        style={{
+          width: "1px",
+          height: "50px",
+          background: `linear-gradient(to bottom, ${t.accentSolid}, transparent)`,
+          animation: "pulse 2s ease infinite",
+        }}
+      />
     </div>
   );
-}
+};
 
-/* ─────────────────────────────────────────────
-   Página principal
-───────────────────────────────────────────── */
-export default function ErrorTheorem({ t, setActive }) {
-  const theme   = (t && typeof t === "object") ? t : {};
-  const accent  = theme.accent  || "#a78bfa";
-  const bg      = theme.bg      || "#06060a";
-  const text    = theme.text    || "#e2d9f3";
-  const cardBg  = theme.cardBg  || "#0f0f18";
-  const subtext = theme.subtext || "#9d8ec0";
-  const isDark  = String(bg).startsWith("#0") || String(bg).startsWith("#1");
 
-  const pStyle = {
-    fontSize: "1.02rem", lineHeight: 1.88,
-    color: isDark ? "#ccc0e0" : "#3a2a5a",
-    margin: "0 0 1.2rem",
-  };
-
-  const h2Style = {
-    fontFamily: "'Cormorant Garamond', Georgia, serif",
-    fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 700,
-    color: text, margin: "0 0 1.2rem", lineHeight: 1.2,
-  };
-
-  const sectionLabelStyle = {
-    display: "inline-block",
-    fontFamily: "'DM Mono', monospace", fontSize: "0.68rem",
-    color: accent, letterSpacing: "0.18em", textTransform: "uppercase",
-    marginBottom: "0.5rem", opacity: 0.8,
-  };
-
-  const backBtnStyle = {
-    display: "inline-flex", alignItems: "center", gap: "0.5rem",
-    padding: "10px 20px", background: `${accent}15`,
-    border: `1px solid ${accent}44`, borderRadius: 8,
-    color: accent, cursor: "pointer", fontSize: "0.85rem",
-    fontFamily: "'DM Mono', monospace", transition: "background 0.2s",
-  };
-
-  const handleBack = useCallback(() => {
-    if (typeof setActive === "function") setActive("Blog");
-  }, [setActive]);
+/* ─── Botão de partículas ────────────────────────────────────────────────── */
+const ParticleToggle = ({ accent, showParticles, onToggle }) => {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, color: text,
-      fontFamily: "'DM Sans', sans-serif", padding: "0 0 6rem" }}>
-
-      {/* Hero */}
-      <div style={{ position: "relative", padding: "5rem 2rem 4rem",
-        textAlign: "center", overflow: "hidden" }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${accent}18 0%, transparent 70%)`,
-          pointerEvents: "none",
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      marginTop: '0.9rem',
+    }}>
+      {/* Botão toggle */}
+      <button
+        onClick={onToggle}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          background: 'none',
+          border: `1px solid ${accent}${hovered ? '88' : '44'}`,
+          borderRadius: 6,
+          color: accent,
+          fontFamily: 'DM Mono, monospace',
+          fontSize: '0.65rem',
+          padding: '5px 12px',
+          cursor: 'pointer',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          transition: 'border-color 0.2s, opacity 0.2s',
+          opacity: hovered ? 1 : 0.75,
+        }}
+      >
+        {/* Indicador on/off */}
+        <span style={{
+          width: 6, height: 6, borderRadius: '50%',
+          background: showParticles ? accent : 'transparent',
+          border: `1px solid ${accent}`,
+          display: 'inline-block',
+          transition: 'background 0.3s',
+          flexShrink: 0,
         }} />
+        {showParticles ? 'particles on' : 'particles off'}
+      </button>
 
-        <Reveal>
-          <div style={{ marginBottom: "2rem" }}>
-            <button style={backBtnStyle} onClick={handleBack}
-              onMouseEnter={e => { e.currentTarget.style.background = `${accent}28`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = `${accent}15`; }}>
-              ← back to blog
-            </button>
-          </div>
-          <div style={{
-            display: "inline-block", background: `${accent}20`, color: accent,
-            border: `1px solid ${accent}44`, borderRadius: 20, padding: "4px 16px",
-            fontSize: "0.72rem", fontFamily: "'DM Mono', monospace",
-            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "1.5rem",
-          }}>
-            Essay · Probability · Literature
-          </div>
-          <h1 style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: "clamp(2.8rem, 6vw, 5rem)", fontWeight: 700, lineHeight: 1.05,
-            marginBottom: "1.5rem",
-            background: `linear-gradient(135deg, ${text} 40%, ${accent})`,
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          }}>
-            The Error Theorem
-          </h1>
-          <p style={{ fontSize: "1.05rem", color: subtext, maxWidth: 560,
-            margin: "0 auto 2rem", lineHeight: 1.7, fontStyle: "italic" }}>
-            An experiment between literature and mathematics — on absurdity, multiple choice,
-            and the dangerous difference between information and hope.
-          </p>
-          <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center",
-            fontSize: "0.78rem", color: subtext, fontFamily: "'DM Mono', monospace" }}>
-            <span>Davi Silva</span>
-            <span>·</span>
-            <span>March 2026</span>
-            <span>·</span>
-            <span>~10 min read</span>
-          </div>
-        </Reveal>
-      </div>
+      {/* Texto "← for better reading" que some ao desligar */}
+      <span style={{
+        fontFamily: 'DM Mono, monospace',
+        fontSize: '0.6rem',
+        color: accent,
+        letterSpacing: '0.1em',
+        opacity: showParticles ? 0.5 : 0,
+        transition: 'opacity 0.4s ease',
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+      }}>
+        ← for better reading
+      </span>
+    </div>
+  );
+};
 
-      {/* Content */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 2rem" }}>
+/* ─── Componente principal ───────────────────────────────────────────────── */
+const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
+  const [showParticles, setShowParticles] = useState(particlesOn !== false);
 
-        {/* §1 */}
-        <Reveal>
-          <Divider accent={accent} />
-          <div style={sectionLabelStyle}>§ 1 — Introduction</div>
-          <h2 style={h2Style}>Imagine.</h2>
-          <p style={pStyle}>
-            One morning, after waking from troubled dreams and still trapped in bed, Sregor Gamsa
-            discovered that he had been transformed into a monstrous insect.
-          </p>
-        </Reveal>
+  const handleParticleToggle = () => {
+    const next = !showParticles;
+    setShowParticles(next);
+    if (typeof toggleParticles === 'function') toggleParticles(next);
+  };
 
-        <Reveal delay={0.1}>
-          <IllustrationBox accent={accent} cardBg={cardBg}
-            caption={"Fig. 0 — Sregor Gamsa contemplating the ceiling and the exam he will not attend.\nThe clock disagrees with his situation."}>
-            <InsectIllustration accent={accent} bgColor={bg} />
-          </IllustrationBox>
-        </Reveal>
+  const p = {
+    fontFamily: 'Crimson Text, serif',
+    fontSize: '1.25rem',
+    color: t.textDim,
+    lineHeight: '1.85',
+    marginBottom: '1.6rem',
+    textAlign: 'justify',
+  };
 
-        <Reveal>
-          <p style={pStyle}>
-            Lying on his back, he looked at the clock ticking on the dresser and felt, with the
-            clarity of a mathematical punishment, that he was already late. But that was not the
-            worst of his problems. His real problem: that morning there would be a multiple-choice
-            exam in Statistics VI.
-          </p>
-          <Pullquote accent={accent}>
-            "If I am going to get almost everything wrong by chance, maybe I can find a way
-            to be wrong more intelligently."
-          </Pullquote>
-          <p style={pStyle}>
-            The first intuition was simple: in a question with four alternatives, his chance of
-            success was only <Tex tex="\tfrac{1}{4}" color={accent} />. If he could eliminate one
-            option, his chance would rise to <Tex tex="\tfrac{1}{3}" color="#34d399" />.
-          </p>
-          <p style={pStyle}>
-            Thus was born — or perhaps merely revealed — what we call here the{" "}
-            <em style={{ color: accent }}>Error Theorem</em>.
-          </p>
-        </Reveal>
+  const accent = t.accent;
+  const green  = '#34d399';
+  const red    = '#f87171';
+  const gold   = '#fbbf24';
 
-        {/* §2 */}
-        <Reveal>
-          <Divider accent={accent} />
-          <div style={sectionLabelStyle}>§ 2 — The Problem</div>
-          <h2 style={h2Style}>Where intuition betrays us.</h2>
-          <p style={pStyle}>
-            Consider a multiple-choice question with <Tex tex="n" color={accent} /> alternatives,
-            exactly one correct. Under symmetry:
-          </p>
-        </Reveal>
+  return (
+    <div style={{ background: t.background, minHeight: '100vh', position: 'relative' }}>
 
-        <Reveal delay={0.1}>
-          <FormulaBlock label="baseline" highlight="purple">
-            <Tex tex="P(\text{correct}) = \dfrac{1}{n}" display />
-          </FormulaBlock>
-        </Reveal>
+      {/* Scroll indicator fixo à esquerda */}
+      <ScrollIndicator t={t} />
 
-        <Reveal>
-          <p style={pStyle}>
-            Sregor imagines: (1) choose one alternative at random; (2) eliminate it;
-            (3) choose again from the remaining ones. With only <Tex tex="n-1" color={accent} /> options
-            remaining, the probability appears to be <Tex tex="\frac{1}{n-1}" color="#34d399" />.
-          </p>
-          <Pullquote accent="#f87171">
-            But this is exactly where intuition betrays us.
-          </Pullquote>
-          <p style={pStyle}>
-            The reduction did not come from real information — it came from a previous random
-            choice. Define the events:
-          </p>
-        </Reveal>
+      <div style={{
+        position: 'relative', zIndex: 10,
+        display: 'flex', flexDirection: 'column',
+        paddingTop: 'max(10vh, 80px)',
+      }}>
 
-        <Reveal delay={0.1}>
-          <FormulaBlock highlight="purple" label="definitions">
-            <ul style={{ margin: 0, padding: "0 0 0 1.2rem", color: subtext, lineHeight: 2.4 }}>
-              <li><Tex tex="E_1" color={accent} /> — first guess is <strong style={{ color: "#f87171" }}>wrong</strong></li>
-              <li><Tex tex="C_1" color={accent} /> — first guess is <strong style={{ color: "#34d399" }}>correct</strong></li>
-              <li><Tex tex="C_2" color={accent} /> — second guess is <strong style={{ color: "#34d399" }}>correct</strong></li>
-            </ul>
-          </FormulaBlock>
+        {/* ── Hero ── */}
+        <Fade>
+          <div style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px)', width: '100%' }}>
 
-          <FormulaBlock label="if first was wrong" highlight="green">
-            <Tex tex="P(C_2 \mid E_1) = \dfrac{1}{n-1}" display color="#34d399" />
-          </FormulaBlock>
+            {/* Back button */}
+            <div style={{ marginBottom: '0.6rem' }}>
+              <BackButton t={t} onClick={() => setActive('Blog')} label="BACK TO BLOG" />
+            </div>
 
-          <FormulaBlock label="if first was correct — fatal" highlight="red">
-            <Tex tex="P(C_2 \mid C_1) = 0" display color="#f87171" />
-            <p style={{ ...pStyle, fontSize: "0.88rem", margin: 0, color: subtext }}>
-              The correct alternative was eliminated. No recovery possible.
-            </p>
-          </FormulaBlock>
+            {/* Particle toggle — diretamente abaixo do back button, alinhado */}
+            {typeof toggleParticles === 'function' ? (
+              <ParticleToggle
+                accent={accent}
+                showParticles={showParticles}
+                onToggle={handleParticleToggle}
+              />
+            ) : null}
 
-          <FormulaBlock label="total probability" highlight="gold">
-            <Tex tex="P(C_2) = \dfrac{n-1}{n}\cdot\dfrac{1}{n-1} + \dfrac{1}{n}\cdot 0" display />
-            <Tex tex="P(C_2) = \dfrac{1}{n}" display color="#fbbf24" />
-          </FormulaBlock>
-        </Reveal>
+            {/* Espaço antes do título */}
+            <div style={{ marginTop: '2rem' }} />
 
-        <Reveal delay={0.1}>
-          <IllustrationBox accent={accent} cardBg={cardBg}
-            caption="Fig. 1 — Probability tree. The green path gains, the red path destroys — they cancel perfectly.">
-            <ProbTree accent={accent} />
-          </IllustrationBox>
-        </Reveal>
-
-        <Reveal>
-          <Pullquote accent={accent}>
-            Seeming to reduce the problem is not the same as reducing uncertainty.
-          </Pullquote>
-        </Reveal>
-
-        {/* §3 */}
-        <Reveal>
-          <Divider accent={accent} />
-          <div style={sectionLabelStyle}>§ 3 — The Error Theorem</div>
-          <h2 style={h2Style}>The theorem, stated precisely.</h2>
-        </Reveal>
-
-        <Reveal delay={0.1}>
-          <div style={{
-            margin: "3rem 0", padding: "2rem 2.5rem",
-            background: `linear-gradient(135deg, ${accent}12, ${accent}06)`,
-            border: `1px solid ${accent}55`, borderRadius: 12,
-            boxShadow: `0 0 40px ${accent}18, inset 0 1px 0 ${accent}22`,
-            position: "relative", overflow: "hidden",
-          }}>
+            {/* Tag */}
             <div style={{
-              position: "absolute", top: 0, right: 0,
-              width: 200, height: 200,
-              background: `radial-gradient(circle, ${accent}20, transparent 70%)`,
-              pointerEvents: "none",
-            }} />
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem",
-              color: accent, letterSpacing: "0.15em", textTransform: "uppercase",
-              marginBottom: "1rem" }}>
-              Theorem 1 — Error Theorem
-            </p>
-            <p style={{ ...pStyle, fontStyle: "italic", marginBottom: "1.2rem" }}>
-              In a multiple-choice problem with <Tex tex="n" color={accent} /> equiprobable
-              alternatives, eliminating one option changes the probability of success{" "}
-              <strong style={{ color: accent }}>if and only if</strong> that elimination is
-              informative — carrying some correlation with the correct answer.
-            </p>
-            <Tex tex="P = \dfrac{1}{n}" display color={accent} />
-          </div>
-        </Reveal>
+              display: 'inline-block',
+              background: `${accent}18`, color: accent,
+              border: `1px solid ${accent}44`, borderRadius: 20,
+              padding: '4px 14px', fontSize: '0.68rem',
+              fontFamily: 'DM Mono, monospace',
+              letterSpacing: '0.14em', textTransform: 'uppercase',
+              marginBottom: '1.2rem',
+            }}>
+              Essay · Probability · Literature
+            </div>
 
-        <Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", margin: "1.5rem 0" }}>
-            <FormulaBlock highlight="green" label="case 1 — informative">
-              <p style={{ ...pStyle, margin: 0, fontSize: "0.9rem" }}>
-                Eliminated because <strong style={{ color: "#34d399" }}>something was learned</strong>.
-                The space of possibilities <em>really</em> is reduced.
+            <h1 style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 'clamp(2.4rem, 5vw, 4rem)',
+              color: t.text, fontWeight: 500,
+              margin: '0 0 1rem', lineHeight: 1.08,
+              letterSpacing: '-0.02em',
+            }}>
+              The Error Theorem
+            </h1>
+
+            <p style={{
+              fontFamily: 'Crimson Text, serif',
+              fontSize: '1.15rem', color: t.textDim,
+              fontStyle: 'italic', lineHeight: 1.65,
+              margin: '0 0 1.5rem', maxWidth: 580,
+            }}>
+              A small experiment between literature and mathematics — on absurdity, multiple choice,
+              and the dangerous difference between real information and imaginary hope.
+            </p>
+
+            <div style={{
+              display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap',
+              fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: t.textDim,
+            }}>
+              <span>Davi Silva</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>IFSC-USP</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>March 2026</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>~10 min read</span>
+            </div>
+
+            <Divider t={t} />
+          </div>
+        </Fade>
+
+        {/* ── Conteúdo ── */}
+        <main style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px) 6rem', width: '100%' }}>
+
+          {/* §1 */}
+          <Fade>
+            <SectionLabel number={1} label="Introduction" t={t} />
+            <SectionTitle t={t}>Imagine.</SectionTitle>
+
+            <p style={p}>
+              One morning, after waking from troubled dreams and still trapped in bed, Sregor Gamsa
+              discovered that he had been transformed into a monstrous insect. Lying on his back, he
+              looked at the clock ticking on the dresser and felt, with the clarity of a mathematical
+              punishment, that he was already late.
+            </p>
+            <p style={p}>
+              But that was not the worst of his problems. His real problem was different: that morning
+              there would be a multiple-choice exam in Statistics VI.
+            </p>
+            <p style={p}>
+              He tried to move. He could not. He tried to convince himself that the world might show
+              some compassion toward the metamorphosed. That also failed. So, like any man who realizes
+              that time and logic are against him, Sregor did what remained to a being cornered between
+              absurdity and urgency: he <em>thought</em>.
+            </p>
+
+            <Pullquote t={t}>
+              "If I am going to get almost everything wrong by chance, maybe I can find a way
+              to be wrong more intelligently."
+            </Pullquote>
+
+            <p style={p}>
+              He stared at the ceiling as if staring at a cursed system of equations. The first intuition
+              was simple: in a question with four alternatives, if he knew nothing, his chance of success
+              was only <InlineMath math="\tfrac{1}{4}" />. If he could eliminate one option, his chance
+              would rise to <InlineMath math="\tfrac{1}{3}" />.
+            </p>
+            <p style={p}>
+              But the human mind is a strange machine. It does not content itself with noticing that
+              chance improves when there is information. Thus was born — or perhaps merely revealed —
+              what we call here the <em style={{ color: accent }}>Error Theorem</em>.
+            </p>
+          </Fade>
+
+          <Divider t={t} />
+
+          {/* §2 */}
+          <Fade delay={0.1}>
+            <SectionLabel number={2} label="The Problem" t={t} />
+            <SectionTitle t={t}>Where intuition betrays us.</SectionTitle>
+
+            <p style={p}>
+              Consider a multiple-choice question with <InlineMath math="n" /> alternatives, exactly
+              one of which is correct. Under symmetry, the chance of answering correctly on a single
+              guess is:
+            </p>
+
+            <EqBlock math="P(\text{correct}) = \frac{1}{n}" color={accent} label="baseline" t={t} />
+
+            <p style={p}>
+              The problem arises when Sregor imagines the following procedure: (1) choose one
+              alternative at random; (2) eliminate that alternative; (3) choose again, at random,
+              one alternative among the remaining ones. With only <InlineMath math="n-1" /> options,
+              the probability of success on the second guess would <em>seem</em> to be{' '}
+              <InlineMath math="\tfrac{1}{n-1}" /> — an apparent improvement from{' '}
+              <InlineMath math="\tfrac{1}{4}" /> to <InlineMath math="\tfrac{1}{3}" />.
+            </p>
+
+            <Pullquote t={t}>
+              But this is exactly where intuition betrays us.
+            </Pullquote>
+
+            <p style={p}>
+              The reduction from <InlineMath math="n" /> to <InlineMath math="n-1" /> alternatives
+              did not come from real information about the correct answer — it came from a previous
+              random choice. To make this explicit, define the events:
+            </p>
+
+            <div style={{
+              margin: '1.5rem 0 2rem',
+              padding: '1.4rem 2rem',
+              background: `${accent}08`,
+              border: `1px solid ${accent}30`,
+              borderRadius: 8,
+              fontFamily: 'Crimson Text, serif',
+              fontSize: '1.15rem',
+              color: t.textDim,
+              lineHeight: 2.2,
+            }}>
+              <div><InlineMath math="E_1" /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
+              <div><InlineMath math="C_1" /> — first guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><InlineMath math="C_2" /> — second guess is <strong style={{ color: green }}>correct</strong></div>
+            </div>
+
+            <p style={p}>The second guess can only be analyzed conditional on the result of the first:</p>
+
+            <EqBlock math="P(C_2 \mid E_1) = \frac{1}{n-1}" color={green} label="if first was wrong" t={t} />
+            <EqBlock math="P(C_2 \mid C_1) = 0" color={red} label="if first was correct — fatal" t={t} />
+
+            <p style={p}>Now apply the law of total probability:</p>
+
+            <EqBlock
+              math="P(C_2) = \underbrace{P(E_1)}_{\displaystyle\frac{n-1}{n}} \cdot \underbrace{P(C_2 \mid E_1)}_{\displaystyle\frac{1}{n-1}} + \underbrace{P(C_1)}_{\displaystyle\frac{1}{n}} \cdot \underbrace{P(C_2 \mid C_1)}_{\displaystyle 0}"
+              color={gold} label="total probability" t={t}
+            />
+            <EqBlock math="P(C_2) = \frac{1}{n}" color={gold} t={t} />
+
+            <p style={p}>
+              The apparent advantage exists only within the subset of cases where the first guess was
+              wrong. But there is a probability of <InlineMath math="\tfrac{1}{n}" /> that the first
+              guess eliminates precisely the correct alternative — making success impossible. This case
+              cancels the apparent gain exactly.
+            </p>
+
+            <Pullquote t={t}>
+              Seeming to reduce the problem is not the same as reducing uncertainty.
+            </Pullquote>
+          </Fade>
+
+          <Divider t={t} />
+
+          {/* §3 */}
+          <Fade delay={0.1}>
+            <SectionLabel number={3} label="The Error Theorem" t={t} />
+            <SectionTitle t={t}>The theorem, stated precisely.</SectionTitle>
+
+            <div style={{
+              margin: '2rem 0 2.5rem',
+              padding: '2rem 2.5rem',
+              background: `linear-gradient(135deg, ${accent}10, ${accent}05)`,
+              border: `1px solid ${accent}55`,
+              borderRadius: 10,
+              boxShadow: `0 0 36px ${accent}14, inset 0 1px 0 ${accent}20`,
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{
+                position: 'absolute', top: 0, right: 0, width: 180, height: 180,
+                background: `radial-gradient(circle, ${accent}18, transparent 70%)`,
+                pointerEvents: 'none',
+              }} />
+              <p style={{
+                fontFamily: 'DM Mono, monospace', fontSize: '0.68rem', color: accent,
+                letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 1.2rem',
+              }}>
+                Theorem 1 — Error Theorem
               </p>
-            </FormulaBlock>
-            <FormulaBlock highlight="red" label="case 2 — random">
-              <p style={{ ...pStyle, margin: 0, fontSize: "0.9rem" }}>
-                A consequence of a <strong style={{ color: "#f87171" }}>previous guess</strong>.
-                The problem was not simplified — merely reorganized.
+              <p style={{ ...p, fontStyle: 'italic', marginBottom: '1.2rem', textAlign: 'left' }}>
+                In a multiple-choice problem with <InlineMath math="n" /> equiprobable alternatives,
+                eliminating one option changes the probability of success{' '}
+                <strong style={{ color: accent }}>if and only if</strong> that elimination is
+                informative — carrying some correlation with the correct answer. If the elimination
+                occurs at random, there is no real probabilistic gain:
               </p>
-            </FormulaBlock>
-          </div>
-          <Pullquote accent={accent}>
-            The first operation can change the mathematics.
-            The second changes only the narrative.
-          </Pullquote>
-        </Reveal>
+              <div style={{ color: t.text }}>
+                <BlockMath math="P = \frac{1}{n}" />
+              </div>
+            </div>
 
-        {/* §4 */}
-        <Reveal>
-          <Divider accent={accent} />
-          <div style={sectionLabelStyle}>§ 4 — A Formal View</div>
-          <h2 style={h2Style}>In the language of probability.</h2>
-        </Reveal>
+            <p style={p}>The mind tends to confuse two distinct situations:</p>
 
-        <Reveal delay={0.1}>
-          <FormulaBlock highlight="purple" label="prior">
-            <Tex tex="P(I = i) = \dfrac{1}{n}, \quad i \in \Omega = \{1, 2, \dots, n\}" display />
-          </FormulaBlock>
-          <FormulaBlock highlight="green" label="if elimination E is informative">
-            <Tex tex="P(I = i \mid E) = \dfrac{1}{n-1}, \quad i \neq k" display color="#34d399" />
-          </FormulaBlock>
-          <FormulaBlock highlight="red" label="if E is independent of I">
-            <Tex tex="P(I = i \mid E) = P(I = i) = \dfrac{1}{n}" display color="#f87171" />
-            <p style={{ ...pStyle, fontSize: "0.85rem", margin: 0, color: subtext }}>
-              By Bayes: since <Tex tex="E \perp I" />, we have{" "}
-              <Tex tex="P(E \mid I=i) = P(E)" />, so the prior is unchanged.
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '2.5rem 0 2rem' }}>
+              {[
+                {
+                  color: green,
+                  label: 'Case 1 — Informative',
+                  text: <>An alternative is eliminated because <strong style={{ color: green }}>something was learned</strong> about it. The space of possibilities <em>really</em> is reduced.</>
+                },
+                {
+                  color: red,
+                  label: 'Case 2 — Random',
+                  text: <>The elimination occurs as a consequence of a <strong style={{ color: red }}>previous random guess</strong>. The problem was not simplified — merely reorganized.</>
+                },
+              ].map(({ color, label, text }, i) => (
+                <div key={i} style={{
+                  /* paddingTop extra para a label não ser cortada */
+                  padding: '2rem 1.6rem 1.4rem',
+                  background: `${color}08`,
+                  border: `1px solid ${color}44`,
+                  borderLeft: `3px solid ${color}`,
+                  borderRadius: '0 8px 8px 0',
+                  position: 'relative',
+                  marginTop: '0.6rem',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: -11, left: 12,
+                    background: color, color: '#06060a',
+                    fontSize: '0.58rem', fontFamily: 'DM Mono, monospace',
+                    padding: '2px 8px', borderRadius: 20,
+                    letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {label}
+                  </span>
+                  <p style={{ ...p, margin: 0, fontSize: '1.1rem', textAlign: 'left' }}>{text}</p>
+                </div>
+              ))}
+            </div>
+
+            <Pullquote t={t}>
+              The first operation can change the mathematics.
+              The second changes only the narrative.
+            </Pullquote>
+          </Fade>
+
+          <Divider t={t} />
+
+          {/* §4 */}
+          <Fade delay={0.1}>
+            <SectionLabel number={4} label="A Formal View" t={t} />
+            <SectionTitle t={t}>In the language of probability.</SectionTitle>
+
+            <p style={p}>
+              Let <InlineMath math="\Omega = \{1, 2, \dots, n\}" /> be the set of alternatives and{' '}
+              <InlineMath math="I" /> the random variable indicating the correct one. Assume a uniform
+              prior:
             </p>
-          </FormulaBlock>
-        </Reveal>
 
-        {/* §5 */}
-        <Reveal>
-          <Divider accent={accent} />
-          <div style={sectionLabelStyle}>§ 5 — A Quantum Information Perspective</div>
-          <h2 style={h2Style}>When mechanics makes the distinction unavoidable.</h2>
-          <p style={pStyle}>
-            Consider a quantum system in uniform superposition of <Tex tex="n" color={accent} /> orthonormal states:
-          </p>
-        </Reveal>
+            <EqBlock math="P(I = i) = \frac{1}{n}, \qquad i \in \Omega" color={accent} label="prior" t={t} />
 
-        <Reveal delay={0.1}>
-          <FormulaBlock highlight="purple" label="quantum superposition">
-            <Tex tex="|\psi\rangle = \dfrac{1}{\sqrt{n}} \sum_{i=1}^{n} |i\rangle" display />
-          </FormulaBlock>
-          <FormulaBlock highlight="green" label="after informative measurement">
-            <Tex tex="|\psi'\rangle = \dfrac{1}{\sqrt{n-1}} \sum_{i \neq k} |i\rangle" display color="#34d399" />
-            <Tex tex="P(i \mid \text{elim. of } k) = \dfrac{1}{n-1}, \quad i \neq k" display color="#34d399" />
-          </FormulaBlock>
-          <FormulaBlock highlight="red" label="uncorrelated operation">
-            <Tex tex="P(i \mid E) = \dfrac{1}{n}" display color="#f87171" />
-          </FormulaBlock>
-        </Reveal>
-
-        <Reveal>
-          <div style={{ margin: "2rem 0", padding: "1.5rem 2rem", background: `${accent}08`,
-            borderRadius: 10, border: `1px solid ${accent}33` }}>
-            <p style={{ ...pStyle, margin: "0 0 0.8rem", fontWeight: 600, color: accent }}>
-              The central distinction:
+            <p style={p}>
+              If the elimination event <InlineMath math="E" /> is{' '}
+              <strong style={{ color: green }}>informative</strong> — implying that alternative{' '}
+              <InlineMath math="A_k" /> is false — then by symmetry among the remaining alternatives:
             </p>
-            <ul style={{ margin: 0, padding: "0 0 0 1.2rem", lineHeight: 2.2 }}>
-              <li style={{ color: "#34d399" }}>
-                Nonzero <strong>mutual information</strong> with the observable → reduces entropy
-              </li>
-              <li style={{ color: "#f87171" }}>
-                <strong>Independent</strong> operation → does not alter relevant entropy,
-                even if the apparent state space shrinks
-              </li>
-            </ul>
-          </div>
-          <Pullquote accent={accent}>
-            It is not the transformation of the system that generates information, but the
-            correlation between that transformation and what one wishes to know.
-          </Pullquote>
-          <p style={pStyle}>
-            In both Sregor Gamsa's problem and the quantum setting, the error lies in
-            confusing{" "}
-            <strong style={{ color: "#f87171" }}>structural reduction of the space</strong> with{" "}
-            <strong style={{ color: "#34d399" }}>informational reduction of uncertainty</strong>.
-          </p>
-        </Reveal>
 
-        {/* Fim */}
-        <Reveal delay={0.1}>
-          <Divider accent={accent} />
-          <div style={{ textAlign: "center", padding: "3rem 2rem",
-            background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${accent}0d, transparent)`,
-            borderRadius: 16 }}>
-            <p style={{ fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontSize: "1.5rem", fontStyle: "italic", color: subtext,
-              marginBottom: "2rem", lineHeight: 1.65 }}>
-              And Sregor Gamsa? He never made it to the exam.
-              <br />But he had solved a more interesting problem.
+            <EqBlock
+              math="P(I = i \mid E) = \frac{1}{n-1}, \qquad i \neq k"
+              color={green} label="informative elimination" t={t}
+            />
+
+            <p style={p}>
+              If instead <InlineMath math="E" /> is{' '}
+              <strong style={{ color: red }}>independent of <InlineMath math="I" /></strong>,
+              then by Bayes' formula — since <InlineMath math="P(E \mid I=i) = P(E)" /> for
+              all <InlineMath math="i" /> — the prior is entirely unchanged:
             </p>
-            <button style={backBtnStyle} onClick={handleBack}
-              onMouseEnter={e => { e.currentTarget.style.background = `${accent}28`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = `${accent}15`; }}>
-              ← back to blog
-            </button>
-          </div>
-        </Reveal>
 
+            <EqBlock
+              math="P(I = i \mid E) = P(I = i) = \frac{1}{n}"
+              color={red} label="independent elimination" t={t}
+            />
+          </Fade>
+
+          <Divider t={t} />
+
+          {/* §5 */}
+          <Fade delay={0.1}>
+            <SectionLabel number={5} label="A Quantum Information Perspective" t={t} />
+            <SectionTitle t={t}>When mechanics makes the distinction unavoidable.</SectionTitle>
+
+            <p style={p}>
+              The conceptual structure of the Error Theorem finds a natural parallel in Quantum
+              Information Theory. Consider a quantum system prepared in a uniform superposition of{' '}
+              <InlineMath math="n" /> orthonormal states:
+            </p>
+
+            <EqBlock
+              math="|\psi\rangle = \frac{1}{\sqrt{n}} \sum_{i=1}^{n} |i\rangle"
+              color={accent} label="quantum superposition" t={t}
+            />
+
+            <p style={p}>
+              The probability of outcome <InlineMath math="i" /> is{' '}
+              <InlineMath math="P(i) = \tfrac{1}{n}" /> — in perfect analogy with the classical
+              multiple-choice problem. If an{' '}
+              <strong style={{ color: green }}>informative projective measurement</strong> discards
+              state <InlineMath math="|k\rangle" />, the system collapses to:
+            </p>
+
+            <EqBlock
+              math="|\psi'\rangle = \frac{1}{\sqrt{n-1}} \sum_{i \neq k} |i\rangle \quad \Longrightarrow \quad P(i \mid \text{elim. of } k) = \frac{1}{n-1}"
+              color={green} label="informative measurement" t={t}
+            />
+
+            <p style={p}>
+              But if the operation is{' '}
+              <strong style={{ color: red }}>uncorrelated with the observable</strong> — a random
+              loss, or a filtering process that does not depend on the correct basis — the effective
+              density matrix contains no additional information:
+            </p>
+
+            <EqBlock math="P(i \mid E) = \frac{1}{n}" color={red} label="uncorrelated operation" t={t} />
+
+            <div style={{
+              margin: '2rem 0',
+              padding: '1.4rem 2rem',
+              background: `${accent}08`,
+              border: `1px solid ${accent}30`,
+              borderRadius: 8,
+              fontFamily: 'Crimson Text, serif',
+              fontSize: '1.15rem',
+              color: t.textDim,
+              lineHeight: 2.2,
+            }}>
+              <div><span style={{ color: green, fontWeight: 600 }}>Nonzero mutual information</span> with the observable → reduces the system's entropy.</div>
+              <div><span style={{ color: red, fontWeight: 600 }}>Independent operation</span> → does not alter the relevant entropy, even if the apparent state space shrinks.</div>
+            </div>
+
+            <p style={p}>
+              In both Sregor Gamsa's problem and the quantum setting, the error lies in confusing{' '}
+              <strong style={{ color: red }}>structural reduction of the space</strong> with{' '}
+              <strong style={{ color: green }}>informational reduction of uncertainty</strong>.
+              Quantum mechanics merely makes this distinction unavoidable — it forces us to recognize
+              that information is not a property of what we do to the system, but of what we are able
+              to infer from it.
+            </p>
+
+            <Pullquote t={t}>
+              It is not the transformation of the system that generates information, but the
+              correlation between that transformation and what one wishes to know.
+            </Pullquote>
+          </Fade>
+
+          <Divider t={t} />
+
+          {/* Fim */}
+          <Fade delay={0.1}>
+            <div style={{
+              textAlign: 'center', padding: '3rem 2rem',
+              background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${accent}0c, transparent)`,
+              borderRadius: 12,
+            }}>
+              <p style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: '1.5rem', fontStyle: 'italic',
+                color: t.textDim, marginBottom: '2.5rem', lineHeight: 1.65,
+              }}>
+                And Sregor Gamsa? He never made it to the exam.
+                <br />But he had solved a more interesting problem.
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
+                {[
+                  { label: '↓ Download PDF', href: '/The_Error_Theorem__inglês_.pdf', download: true, primary: true },
+                  { label: '↗ GitHub', href: 'https://github.com/davisilva169/Portfolio', primary: false },
+                ].map(({ label, href, download, primary }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    download={download ? true : undefined}
+                    target={download ? undefined : '_blank'}
+                    rel={download ? undefined : 'noopener noreferrer'}
+                    style={{
+                      padding: '11px 22px',
+                      border: `1px solid ${primary ? accent : accent + '66'}`,
+                      color: primary ? accent : t.textDim,
+                      fontFamily: 'DM Mono, monospace', fontSize: '0.75rem',
+                      letterSpacing: '0.1em', textDecoration: 'none',
+                      borderRadius: 6, textTransform: 'uppercase',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `${accent}18`; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+
+              <BackButton t={t} onClick={() => setActive('Blog')} label="BACK TO BLOG" />
+            </div>
+          </Fade>
+
+        </main>
       </div>
     </div>
   );
-}
+};
+
+export default ErrorTheorem;

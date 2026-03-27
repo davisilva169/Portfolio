@@ -19,35 +19,18 @@ import About    from "./pages/About";
 import MuonPaper             from "./pages/research/MuonPaper";
 import UniformFragmentation  from "./pages/research/UniformFragmentation";
 import PoincareMaps          from "./pages/research/PoincareMaps";
-// ↑ Para adicionar um novo paper:
-//   1. Crie o arquivo em src/pages/research/NomeDoPaper.jsx
-//   2. Importe aqui
-//   3. Adicione o case no switch abaixo
-//   4. Adicione o pageKey no array RESEARCH em src/data/research.js
 
 // ─── Páginas de detalhe: Projects ─────────────────────────────────────────────
 import VWPhysics from "./pages/projects/VWPhysics";
-// ↑ Para adicionar um novo projeto:
-//   1. Crie o arquivo em src/pages/projects/NomeDoProjeto.jsx
-//   2. Importe aqui
-//   3. Adicione o case no switch abaixo
-//   4. Adicione o pageKey no array PROJECTS em src/data/projects.js
 
 // ─── Páginas de detalhe: Blog ─────────────────────────────────────────────────
 import ErrorTheorem from "./pages/blog/ErrorTheorem";
-// ↑ Para adicionar um novo post:
-//   1. Crie o arquivo em src/pages/blog/NomeDoPost.jsx
-//   2. Importe aqui
-//   3. Adicione o case no switch abaixo
-//   4. Adicione o pageKey no array POSTS em src/data/posts.js
 
 // ─────────────────────────────────────────────────────────────────────────────
-// APP ROOT
-// O switch abaixo é o único lugar onde você registra novas páginas.
-// ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [active, setActive] = useState("Home");
-  const [dark,   setDark]   = useState(true);
+  const [active,      setActive]      = useState("Home");
+  const [dark,        setDark]        = useState(true);
+  const [particlesOn, setParticlesOn] = useState(true);
 
   const t = dark ? DARK : LIGHT;
 
@@ -80,7 +63,14 @@ export default function App() {
 
       // ── Detalhes de Blog ────────────────────────────────────────────────────
       case "ErrorTheorem":
-        return <ErrorTheorem t={t} setActive={setActive} />;
+        return (
+          <ErrorTheorem
+            t={t}
+            setActive={setActive}
+            toggleParticles={setParticlesOn}
+            particlesOn={particlesOn}
+          />
+        );
 
       // ── Fallback ────────────────────────────────────────────────────────────
       default:
@@ -130,8 +120,8 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: ${t.scrollbar}; border-radius: 2px; }
       `}</style>
 
-      {/* Canvas de partículas */}
-      <ParticleCanvas dark={dark} />
+      {/* Canvas de partículas — recebe visible para ligar/desligar */}
+      <ParticleCanvas dark={dark} visible={particlesOn} />
 
       {/* Glow sutil no topo */}
       <div
