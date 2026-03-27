@@ -1,24 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { InlineMath, BlockMath } from 'react-katex';
-import 'katex/dist/katex.min.css';
 
 import Fade       from '../../components/Fade';
 import BackButton from '../../components/BackButton';
+import pdfFile from './data_blog/The_Error_Theorem.pdf';
+/* ─────────────────────────────────────────────────────────────────────────────
+   FIX GITHUB PAGES: injetar CSS do KaTeX via CDN ao invés de depender do
+   bundle do Vite (que não copia os fontes corretamente em produção).
+   O import 'katex/dist/katex.min.css' é removido — este useEffect substitui.
+───────────────────────────────────────────────────────────────────────────── */
+function useKatexCSS() {
+  useEffect(() => {
+    if (document.getElementById('katex-cdn-css')) return;
+    const link = document.createElement('link');
+    link.id   = 'katex-cdn-css';
+    link.rel  = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+    document.head.appendChild(link);
+  }, []);
+}
 
-/* ─── Divisor padrão do site (igual ao usado em Research, Projects, etc.) ── */
+/* ─── Divisor centralizado ───────────────────────────────────────────────── */
 const Divider = ({ t = {} }) => {
-  const accent = t.accentSolid || t.accent || "#b58cff";
-
+  const accent = t.accentSolid || t.accent || '#b58cff';
   return (
-    <div style={{ margin: "3.5rem 0", alignItems: 'center' }}>
-      <div
-        style={{
-          width: "50px",
-          height: "3px",
-          background: `linear-gradient(90deg, ${accent} 0%, ${accent}80 55%, transparent 100%)`,
-          borderRadius: "999px",
-        }}
-      />
+    <div style={{ margin: '3.5rem auto', width: 50 }}>
+      <div style={{
+        width: '50px',
+        height: '3px',
+        background: `linear-gradient(90deg, ${accent} 0%, ${accent}80 55%, transparent 100%)`,
+        borderRadius: '999px',
+      }} />
     </div>
   );
 };
@@ -54,35 +66,50 @@ const SectionTitle = ({ children, t }) => (
 );
 
 /* ─── Bloco de equação colorido ─────────────────────────────────────────── */
-/* Fix: paddingTop aumentado para não cortar a label tag que fica acima      */
+/*
+  FIX CLIPPING: `overflowX: auto` no container pai cria um novo contexto de
+  formatação e clipa filhos com `position: absolute` que ultrapassam a borda.
+  Solução: separar em dois divs — o externo cuida do posicionamento/label,
+  o interno cuida do overflow do conteúdo matemático.
+*/
 const EqBlock = ({ math, color, t, label }) => {
   const borderColor = color || t.accent;
   return (
+    /* Wrapper externo: posicionamento, margem, label flutuante */
     <div style={{
-      margin: '2.5rem 0',
-      /* top padding extra quando há label para ela não ficar cortada */
-      padding: label ? '2rem 2rem 1.4rem' : '1.4rem 2rem',
-      background: `${borderColor}0a`,
-      borderLeft: `3px solid ${borderColor}`,
-      borderRadius: '0 8px 8px 0',
-      boxShadow: `0 0 20px ${borderColor}14`,
       position: 'relative',
-      overflowX: 'auto',
+      margin: label ? '3rem 0 2.5rem' : '2.5rem 0',
     }}>
       {label ? (
         <span style={{
-          position: 'absolute', top: -11, left: 16,
-          background: borderColor, color: '#06060a',
-          fontSize: '0.6rem', fontFamily: 'DM Mono, monospace',
-          padding: '2px 10px', borderRadius: 20,
-          letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
-          /* garante que a tag não seja cortada pelo overflow do pai */
+          position: 'absolute',
+          top: -11, left: 16,
+          background: borderColor,
+          color: '#06060a',
+          fontSize: '0.6rem',
+          fontFamily: 'DM Mono, monospace',
+          padding: '2px 10px',
+          borderRadius: 20,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          fontWeight: 700,
           whiteSpace: 'nowrap',
+          zIndex: 1,
         }}>
           {label}
         </span>
       ) : null}
-      <div style={{ color: t.text }}>
+
+      {/* Inner: visual do bloco + overflow apenas aqui */}
+      <div style={{
+        padding: '1.4rem 2rem',
+        background: `${borderColor}0a`,
+        borderLeft: `3px solid ${borderColor}`,
+        borderRadius: '0 8px 8px 0',
+        boxShadow: `0 0 20px ${borderColor}14`,
+        overflowX: 'auto',   /* overflow confinado ao inner — label não é cortada */
+        color: t.text,
+      }}>
         <BlockMath math={math} />
       </div>
     </div>
@@ -106,102 +133,75 @@ const Pullquote = ({ children, t }) => (
   </blockquote>
 );
 
-/* ─── Scroll indicator (igual ao da Home) ────────────────────────────────── */
+/* ─── Scroll indicator ───────────────────────────────────────────────────── */
 export const ScrollIndicator = ({ t }) => {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const onScroll = () => {
-      const scrolled = window.scrollY;
-      const maxScroll =
-        document.documentElement.scrollHeight - window.innerHeight;
-
-      setVisible(scrolled < maxScroll - 120);
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      setVisible(window.scrollY < maxScroll - 120);
     };
-
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: "2.2rem",
-        bottom: "2.5rem",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "10px",
-        opacity: visible ? 0.55 : 0,
-        transition: "opacity 0.6s ease",
-        zIndex: 10,
-        pointerEvents: "none",
-      }}
-    >
-      <span
-        style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: "0.55rem",
-          letterSpacing: "0.22em",
-          color: t.accentSolid,
-          writingMode: "vertical-rl",
-          textTransform: "uppercase",
-        }}
-      >
+    <div style={{
+      position: 'fixed',
+      left: '2.2rem',
+      bottom: '2.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '10px',
+      opacity: visible ? 0.55 : 0,
+      transition: 'opacity 0.6s ease',
+      zIndex: 10,
+      pointerEvents: 'none',
+    }}>
+      <span style={{
+        fontFamily: "'DM Mono', monospace",
+        fontSize: '0.55rem',
+        letterSpacing: '0.22em',
+        color: t.accentSolid || t.accent,
+        writingMode: 'vertical-rl',
+        textTransform: 'uppercase',
+      }}>
         scroll
       </span>
-
-      <div
-        style={{
-          width: "1px",
-          height: "50px",
-          background: `linear-gradient(to bottom, ${t.accentSolid}, transparent)`,
-          animation: "pulse 2s ease infinite",
-        }}
-      />
+      <div style={{
+        width: '1px',
+        height: '50px',
+        background: `linear-gradient(to bottom, ${t.accentSolid || t.accent}, transparent)`,
+        animation: 'pulse 2s ease infinite',
+      }} />
     </div>
   );
 };
 
-
 /* ─── Botão de partículas ────────────────────────────────────────────────── */
 const ParticleToggle = ({ accent, showParticles, onToggle }) => {
   const [hovered, setHovered] = useState(false);
-
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      marginTop: '0.9rem',
-    }}>
-      {/* Botão toggle */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.9rem' }}>
       <button
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
           background: 'none',
           border: `1px solid ${accent}${hovered ? '88' : '44'}`,
-          borderRadius: 6,
-          color: accent,
-          fontFamily: 'DM Mono, monospace',
-          fontSize: '0.65rem',
-          padding: '5px 12px',
-          cursor: 'pointer',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
+          borderRadius: 6, color: accent,
+          fontFamily: 'DM Mono, monospace', fontSize: '0.65rem',
+          padding: '5px 12px', cursor: 'pointer',
+          letterSpacing: '0.12em', textTransform: 'uppercase',
           transition: 'border-color 0.2s, opacity 0.2s',
           opacity: hovered ? 1 : 0.75,
         }}
       >
-        {/* Indicador on/off */}
         <span style={{
           width: 6, height: 6, borderRadius: '50%',
           background: showParticles ? accent : 'transparent',
@@ -213,16 +213,13 @@ const ParticleToggle = ({ accent, showParticles, onToggle }) => {
         {showParticles ? 'particles on' : 'particles off'}
       </button>
 
-      {/* Texto "← for better reading" que some ao desligar */}
+      {/* "← for better reading" some quando partículas são desligadas */}
       <span style={{
-        fontFamily: 'DM Mono, monospace',
-        fontSize: '0.6rem',
-        color: accent,
-        letterSpacing: '0.1em',
+        fontFamily: 'DM Mono, monospace', fontSize: '0.6rem',
+        color: accent, letterSpacing: '0.1em',
         opacity: showParticles ? 0.5 : 0,
         transition: 'opacity 0.4s ease',
-        whiteSpace: 'nowrap',
-        pointerEvents: 'none',
+        whiteSpace: 'nowrap', pointerEvents: 'none',
       }}>
         ← for better reading
       </span>
@@ -232,7 +229,16 @@ const ParticleToggle = ({ accent, showParticles, onToggle }) => {
 
 /* ─── Componente principal ───────────────────────────────────────────────── */
 const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
+  useKatexCSS();   /* garante o CSS do KaTeX mesmo no GitHub Pages */
+
   const [showParticles, setShowParticles] = useState(particlesOn !== false);
+
+  /* FIX PARTÍCULAS: restaura ao sair da página */
+  useEffect(() => {
+    return () => {
+      if (typeof toggleParticles === 'function') toggleParticles(true);
+    };
+  }, [toggleParticles]);
 
   const handleParticleToggle = () => {
     const next = !showParticles;
@@ -256,8 +262,6 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
   return (
     <div style={{ background: t.background, minHeight: '100vh', position: 'relative' }}>
-
-      {/* Scroll indicator fixo à esquerda */}
       <ScrollIndicator t={t} />
 
       <div style={{
@@ -270,24 +274,16 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
         <Fade>
           <div style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px)', width: '100%' }}>
 
-            {/* Back button */}
             <div style={{ marginBottom: '0.6rem' }}>
               <BackButton t={t} onClick={() => setActive('Blog')} label="BACK TO BLOG" />
             </div>
 
-            {/* Particle toggle — diretamente abaixo do back button, alinhado */}
             {typeof toggleParticles === 'function' ? (
-              <ParticleToggle
-                accent={accent}
-                showParticles={showParticles}
-                onToggle={handleParticleToggle}
-              />
+              <ParticleToggle accent={accent} showParticles={showParticles} onToggle={handleParticleToggle} />
             ) : null}
 
-            {/* Espaço antes do título */}
             <div style={{ marginTop: '2rem' }} />
 
-            {/* Tag */}
             <div style={{
               display: 'inline-block',
               background: `${accent}18`, color: accent,
@@ -489,14 +485,13 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
                 informative — carrying some correlation with the correct answer. If the elimination
                 occurs at random, there is no real probabilistic gain:
               </p>
-              <div style={{ color: t.text }}>
-                <BlockMath math="P = \frac{1}{n}" />
-              </div>
+              <BlockMath math="P = \frac{1}{n}" />
             </div>
 
             <p style={p}>The mind tends to confuse two distinct situations:</p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '2.5rem 0 2rem' }}>
+            {/* Cards — mesmo fix do EqBlock: label fora do container com overflow */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '3rem 0 2rem' }}>
               {[
                 {
                   color: green,
@@ -509,27 +504,26 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
                   text: <>The elimination occurs as a consequence of a <strong style={{ color: red }}>previous random guess</strong>. The problem was not simplified — merely reorganized.</>
                 },
               ].map(({ color, label, text }, i) => (
-                <div key={i} style={{
-                  /* paddingTop extra para a label não ser cortada */
-                  padding: '2rem 1.6rem 1.4rem',
-                  background: `${color}08`,
-                  border: `1px solid ${color}44`,
-                  borderLeft: `3px solid ${color}`,
-                  borderRadius: '0 8px 8px 0',
-                  position: 'relative',
-                  marginTop: '0.6rem',
-                }}>
+                <div key={i} style={{ position: 'relative' }}>
                   <span style={{
                     position: 'absolute', top: -11, left: 12,
                     background: color, color: '#06060a',
                     fontSize: '0.58rem', fontFamily: 'DM Mono, monospace',
                     padding: '2px 8px', borderRadius: 20,
                     letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700,
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'nowrap', zIndex: 1,
                   }}>
                     {label}
                   </span>
-                  <p style={{ ...p, margin: 0, fontSize: '1.1rem', textAlign: 'left' }}>{text}</p>
+                  <div style={{
+                    padding: '1.6rem 1.6rem 1.4rem',
+                    background: `${color}08`,
+                    border: `1px solid ${color}44`,
+                    borderLeft: `3px solid ${color}`,
+                    borderRadius: '0 8px 8px 0',
+                  }}>
+                    <p style={{ ...p, margin: 0, fontSize: '1.1rem', textAlign: 'left' }}>{text}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -549,8 +543,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
             <p style={p}>
               Let <InlineMath math="\Omega = \{1, 2, \dots, n\}" /> be the set of alternatives and{' '}
-              <InlineMath math="I" /> the random variable indicating the correct one. Assume a uniform
-              prior:
+              <InlineMath math="I" /> the random variable indicating the correct one. Assume a uniform prior:
             </p>
 
             <EqBlock math="P(I = i) = \frac{1}{n}, \qquad i \in \Omega" color={accent} label="prior" t={t} />
@@ -669,8 +662,8 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
                 {[
-                  { label: '↓ Download PDF', href: '/The_Error_Theorem__inglês_.pdf', download: true, primary: true },
-                  { label: '↗ GitHub', href: 'https://github.com/davisilva169/Portfolio', primary: false },
+                  { label: '↓ Download PDF', href: pdfFile, download: true, primary: true },
+                  { label: '↗ GitHub', href: 'https://github.com/davisilva169/The_Error_Theorem', primary: false },
                 ].map(({ label, href, download, primary }) => (
                   <a
                     key={label}

@@ -1,43 +1,81 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-// ─── Tema ─────────────────────────────────────────────────────────────────────
 import { DARK, LIGHT } from "./themes";
 
-// ─── Componentes globais ──────────────────────────────────────────────────────
 import ParticleCanvas from "./components/ParticleCanvas";
 import Navbar         from "./components/Navbar";
 import Footer         from "./components/Footer";
 
-// ─── Páginas principais ───────────────────────────────────────────────────────
 import Home     from "./pages/Home";
 import Research from "./pages/Research";
 import Projects from "./pages/Projects";
 import Blog     from "./pages/Blog";
 import About    from "./pages/About";
 
-// ─── Páginas de detalhe: Research ─────────────────────────────────────────────
 import MuonPaper             from "./pages/research/MuonPaper";
 import UniformFragmentation  from "./pages/research/UniformFragmentation";
 import PoincareMaps          from "./pages/research/PoincareMaps";
 
-// ─── Páginas de detalhe: Projects ─────────────────────────────────────────────
-import VWPhysics from "./pages/projects/VWPhysics";
-
-// ─── Páginas de detalhe: Blog ─────────────────────────────────────────────────
+import VWPhysics    from "./pages/projects/VWPhysics";
 import ErrorTheorem from "./pages/blog/ErrorTheorem";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Hash routing — mapeia URL hash ↔ nome de página interno
+// Permite deep links como davisilva169.github.io/Portfolio/#/blog/error-theorem
+// ─────────────────────────────────────────────────────────────────────────────
+const PAGE_TO_HASH = {
+  Home:                 "#/",
+  Research:             "#/research",
+  Projects:             "#/projects",
+  Blog:                 "#/blog",
+  About:                "#/about",
+  MuonPaper:            "#/research/muon-paper",
+  UniformFragmentation: "#/research/uniform-fragmentation",
+  PoincareMaps:         "#/research/poincare-maps",
+  VWPhysics:            "#/projects/vw-physics",
+  ErrorTheorem:         "#/blog/error-theorem",
+};
+
+const HASH_TO_PAGE = Object.fromEntries(
+  Object.entries(PAGE_TO_HASH).map(([page, hash]) => [hash, page])
+);
+
+function hashToPage(hash) {
+  return HASH_TO_PAGE[hash] || "Home";
+}
+
+function pageFromCurrentHash() {
+  return hashToPage(window.location.hash || "#/");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [active,      setActive]      = useState("Home");
+  const [active,      setActiveState] = useState(pageFromCurrentHash);
   const [dark,        setDark]        = useState(true);
   const [particlesOn, setParticlesOn] = useState(true);
 
   const t = dark ? DARK : LIGHT;
 
+  // Navega para uma página e atualiza o hash da URL
+  const setActive = useCallback((page) => {
+    const hash = PAGE_TO_HASH[page] || "#/";
+    window.location.hash = hash;
+    setActiveState(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Sincroniza com o botão "voltar/avançar" do navegador
+  useEffect(() => {
+    const onHashChange = () => {
+      setActiveState(pageFromCurrentHash());
+      window.scrollTo({ top: 0 });
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
   const renderPage = () => {
     switch (active) {
-
-      // ── Páginas principais ──────────────────────────────────────────────────
       case "Home":
         return <Home setActive={setActive} t={t} dark={dark} />;
       case "Research":
@@ -49,7 +87,6 @@ export default function App() {
       case "About":
         return <About t={t} />;
 
-      // ── Detalhes de Research ────────────────────────────────────────────────
       case "MuonPaper":
         return <MuonPaper t={t} setActive={setActive} />;
       case "UniformFragmentation":
@@ -57,11 +94,9 @@ export default function App() {
       case "PoincareMaps":
         return <PoincareMaps t={t} setActive={setActive} />;
 
-      // ── Detalhes de Projects ────────────────────────────────────────────────
       case "VWPhysics":
         return <VWPhysics t={t} setActive={setActive} />;
 
-      // ── Detalhes de Blog ────────────────────────────────────────────────────
       case "ErrorTheorem":
         return (
           <ErrorTheorem
@@ -72,7 +107,6 @@ export default function App() {
           />
         );
 
-      // ── Fallback ────────────────────────────────────────────────────────────
       default:
         return <Home setActive={setActive} t={t} dark={dark} />;
     }
@@ -80,7 +114,6 @@ export default function App() {
 
   return (
     <>
-      {/* Estilos globais */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
 
@@ -120,24 +153,17 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: ${t.scrollbar}; border-radius: 2px; }
       `}</style>
 
-      {/* Canvas de partículas — recebe visible para ligar/desligar */}
       <ParticleCanvas dark={dark} visible={particlesOn} />
 
-      {/* Glow sutil no topo */}
-      <div
-        style={{
-          position:      "fixed",
-          top:           0,
-          left:          0,
-          right:         0,
-          height:        "80px",
-          background:    "linear-gradient(to bottom, rgba(124,58,237,0.07), transparent)",
-          zIndex:        99,
-          pointerEvents: "none",
-        }}
-      />
+      <div style={{
+        position:      "fixed",
+        top:           0, left: 0, right: 0,
+        height:        "80px",
+        background:    "linear-gradient(to bottom, rgba(124,58,237,0.07), transparent)",
+        zIndex:        99,
+        pointerEvents: "none",
+      }} />
 
-      {/* Navegação */}
       <Navbar
         active={active}
         setActive={setActive}
@@ -146,7 +172,6 @@ export default function App() {
         t={t}
       />
 
-      {/* Página atual */}
       <main style={{ position: "relative", zIndex: 2, textAlign: "left" }}>
         {renderPage()}
       </main>
