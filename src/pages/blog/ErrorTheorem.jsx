@@ -1,24 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { InlineMath, BlockMath } from 'react-katex';
+import React, { useState, useEffect, useRef } from 'react';
+// react-katex REMOVIDO — renderiza com window.katex via CDN (imune ao Vite minifier)
 
 import Fade       from '../../components/Fade';
 import BackButton from '../../components/BackButton';
 import pdfFile from './data_blog/The_Error_Theorem.pdf';
-/* ─────────────────────────────────────────────────────────────────────────────
-   FIX GITHUB PAGES: injetar CSS do KaTeX via CDN ao invés de depender do
-   bundle do Vite (que não copia os fontes corretamente em produção).
-   O import 'katex/dist/katex.min.css' é removido — este useEffect substitui.
-───────────────────────────────────────────────────────────────────────────── */
-function useKatexCSS() {
+
+/* useKatex: carrega KaTeX JS+CSS via CDN — fora do bundle do Vite */
+function useKatex() {
+  const [ready, setReady] = useState(!!window.katex);
   useEffect(() => {
-    if (document.getElementById('katex-cdn-css')) return;
-    const link = document.createElement('link');
-    link.id   = 'katex-cdn-css';
-    link.rel  = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-    document.head.appendChild(link);
+    if (!document.getElementById('katex-cdn-css')) {
+      const link = document.createElement('link');
+      link.id   = 'katex-cdn-css';
+      link.rel  = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+      document.head.appendChild(link);
+    }
+    if (window.katex) { setReady(true); return; }
+    if (document.getElementById('katex-cdn-js')) return;
+    const script = document.createElement('script');
+    script.id    = 'katex-cdn-js';
+    script.src   = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+    script.async = true;
+    script.onload = () => setReady(true);
+    document.head.appendChild(script);
   }, []);
+  return ready;
 }
+
+/* KTex: substitui InlineMath e BlockMath. As strings math chegam intactas
+   ao window.katex.render() — nenhum minificador as processa. */
+function KTex({ math, block = false, color }) {
+  const ref   = useRef(null);
+  const ready = useKatex();
+  useEffect(() => {
+    if (!ready) return;
+    const tryRender = () => {
+      if (window.katex && ref.current) {
+        try {
+          window.katex.render(math, ref.current, { throwOnError: false, displayMode: block });
+          if (color) ref.current.style.color = color;
+        } catch (_) {}
+      } else { setTimeout(tryRender, 80); }
+    };
+    tryRender();
+  }, [ready, math, block, color]);
+  return (
+    <span
+      ref={ref}
+      style={{ display: block ? 'block' : 'inline-block', margin: block ? '0.6rem 0' : '0 1px' }}
+    />
+  );
+}
+
 
 /* ─── Divisor centralizado ───────────────────────────────────────────────── */
 const Divider = ({ t = {} }) => {
@@ -110,7 +144,7 @@ const EqBlock = ({ math, color, t, label }) => {
         overflowX: 'auto',   /* overflow confinado ao inner — label não é cortada */
         color: t.text,
       }}>
-        <BlockMath math={math} />
+        <KTex math={math} block />
       </div>
     </div>
   );
@@ -229,7 +263,7 @@ const ParticleToggle = ({ accent, showParticles, onToggle }) => {
 
 /* ─── Componente principal ───────────────────────────────────────────────── */
 const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
-  useKatexCSS();   /* garante o CSS do KaTeX mesmo no GitHub Pages */
+     /* garante o CSS do KaTeX mesmo no GitHub Pages */
 
   const [showParticles, setShowParticles] = useState(particlesOn !== false);
 
@@ -366,8 +400,8 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <p style={p}>
               He stared at the ceiling as if staring at a cursed system of equations. The first intuition
               was simple: in a question with four alternatives, if he knew nothing, his chance of success
-              was only <InlineMath math={String.raw`\tfrac{1}{4}`} />. If he could eliminate one option, his chance
-              would rise to <InlineMath math="\\tfrac{1}{3}" />.
+              was only <KTex math={String.raw`\tfrac{1}{4}`} />. If he could eliminate one option, his chance
+              would rise to <KTex math={String.raw`\tfrac{1}{3}`} />.
             </p>
             <p style={p}>
               But the human mind is a strange machine. It does not content itself with noticing that
@@ -384,7 +418,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <SectionTitle t={t}>Where intuition betrays us.</SectionTitle>
 
             <p style={p}>
-              Consider a multiple-choice question with <InlineMath math="n" /> alternatives, exactly
+              Consider a multiple-choice question with <KTex math="n" /> alternatives, exactly
               one of which is correct. Under symmetry, the chance of answering correctly on a single
               guess is:
             </p>
@@ -394,10 +428,10 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <p style={p}>
               The problem arises when Sregor imagines the following procedure: (1) choose one
               alternative at random; (2) eliminate that alternative; (3) choose again, at random,
-              one alternative among the remaining ones. With only <InlineMath math="n-1" /> options,
+              one alternative among the remaining ones. With only <KTex math="n-1" /> options,
               the probability of success on the second guess would <em>seem</em> to be{' '}
-              <InlineMath math="\tfrac{1}{n-1}" /> — an apparent improvement from{' '}
-              <InlineMath math="\tfrac{1}{4}" /> to <InlineMath math="\tfrac{1}{3}" />.
+              <KTex math="\tfrac{1}{n-1}" /> — an apparent improvement from{' '}
+              <KTex math="\tfrac{1}{4}" /> to <KTex math="\tfrac{1}{3}" />.
             </p>
 
             <Pullquote t={t}>
@@ -405,7 +439,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             </Pullquote>
 
             <p style={p}>
-              The reduction from <InlineMath math="n" /> to <InlineMath math="n-1" /> alternatives
+              The reduction from <KTex math="n" /> to <KTex math="n-1" /> alternatives
               did not come from real information about the correct answer — it came from a previous
               random choice. To make this explicit, define the events:
             </p>
@@ -421,9 +455,9 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               color: t.textDim,
               lineHeight: 2.2,
             }}>
-              <div><InlineMath math="E_1" /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
-              <div><InlineMath math="C_1" /> — first guess is <strong style={{ color: green }}>correct</strong></div>
-              <div><InlineMath math="C_2" /> — second guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><KTex math="E_1" /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
+              <div><KTex math="C_1" /> — first guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><KTex math="C_2" /> — second guess is <strong style={{ color: green }}>correct</strong></div>
             </div>
 
             <p style={p}>The second guess can only be analyzed conditional on the result of the first:</p>
@@ -441,7 +475,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
             <p style={p}>
               The apparent advantage exists only within the subset of cases where the first guess was
-              wrong. But there is a probability of <InlineMath math="\tfrac{1}{n}" /> that the first
+              wrong. But there is a probability of <KTex math="\tfrac{1}{n}" /> that the first
               guess eliminates precisely the correct alternative — making success impossible. This case
               cancels the apparent gain exactly.
             </p>
@@ -479,13 +513,13 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
                 Theorem 1 — Error Theorem
               </p>
               <p style={{ ...p, fontStyle: 'italic', marginBottom: '1.2rem', textAlign: 'left' }}>
-                In a multiple-choice problem with <InlineMath math="n" /> equiprobable alternatives,
+                In a multiple-choice problem with <KTex math="n" /> equiprobable alternatives,
                 eliminating one option changes the probability of success{' '}
                 <strong style={{ color: accent }}>if and only if</strong> that elimination is
                 informative — carrying some correlation with the correct answer. If the elimination
                 occurs at random, there is no real probabilistic gain:
               </p>
-              <BlockMath math="P = \frac{1}{n}" />
+              <KTex math="P = \frac{1}{n}" block />
             </div>
 
             <p style={p}>The mind tends to confuse two distinct situations:</p>
@@ -542,16 +576,16 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <SectionTitle t={t}>In the language of probability.</SectionTitle>
 
             <p style={p}>
-              Let <InlineMath math="\Omega = \{1, 2, \dots, n\}" /> be the set of alternatives and{' '}
-              <InlineMath math="I" /> the random variable indicating the correct one. Assume a uniform prior:
+              Let <KTex math="\Omega = \{1, 2, \dots, n\}" /> be the set of alternatives and{' '}
+              <KTex math="I" /> the random variable indicating the correct one. Assume a uniform prior:
             </p>
 
             <EqBlock math="P(I = i) = \frac{1}{n}, \qquad i \in \Omega" color={accent} label="prior" t={t} />
 
             <p style={p}>
-              If the elimination event <InlineMath math="E" /> is{' '}
+              If the elimination event <KTex math="E" /> is{' '}
               <strong style={{ color: green }}>informative</strong> — implying that alternative{' '}
-              <InlineMath math="A_k" /> is false — then by symmetry among the remaining alternatives:
+              <KTex math="A_k" /> is false — then by symmetry among the remaining alternatives:
             </p>
 
             <EqBlock
@@ -560,10 +594,10 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             />
 
             <p style={p}>
-              If instead <InlineMath math="E" /> is{' '}
-              <strong style={{ color: red }}>independent of <InlineMath math="I" /></strong>,
-              then by Bayes' formula — since <InlineMath math="P(E \mid I=i) = P(E)" /> for
-              all <InlineMath math="i" /> — the prior is entirely unchanged:
+              If instead <KTex math="E" /> is{' '}
+              <strong style={{ color: red }}>independent of <KTex math="I" /></strong>,
+              then by Bayes' formula — since <KTex math="P(E \mid I=i) = P(E)" /> for
+              all <KTex math="i" /> — the prior is entirely unchanged:
             </p>
 
             <EqBlock
@@ -582,7 +616,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <p style={p}>
               The conceptual structure of the Error Theorem finds a natural parallel in Quantum
               Information Theory. Consider a quantum system prepared in a uniform superposition of{' '}
-              <InlineMath math="n" /> orthonormal states:
+              <KTex math="n" /> orthonormal states:
             </p>
 
             <EqBlock
@@ -591,11 +625,11 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             />
 
             <p style={p}>
-              The probability of outcome <InlineMath math="i" /> is{' '}
-              <InlineMath math="P(i) = \tfrac{1}{n}" /> — in perfect analogy with the classical
+              The probability of outcome <KTex math="i" /> is{' '}
+              <KTex math="P(i) = \tfrac{1}{n}" /> — in perfect analogy with the classical
               multiple-choice problem. If an{' '}
               <strong style={{ color: green }}>informative projective measurement</strong> discards
-              state <InlineMath math="|k\rangle" />, the system collapses to:
+              state <KTex math="|k\rangle" />, the system collapses to:
             </p>
 
             <EqBlock
