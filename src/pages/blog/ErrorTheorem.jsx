@@ -418,20 +418,20 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <SectionTitle t={t}>Where intuition betrays us.</SectionTitle>
 
             <p style={p}>
-              Consider a multiple-choice question with <KTex math="n" /> alternatives, exactly
+              Consider a multiple-choice question with <KTex math={String.raw`n`} /> alternatives, exactly
               one of which is correct. Under symmetry, the chance of answering correctly on a single
               guess is:
             </p>
 
-            <EqBlock math="P(\text{correct}) = \frac{1}{n}" color={accent} label="baseline" t={t} />
+            <EqBlock math={String.raw`P(\text{correct}) = \frac{1}{n}`} color={accent} label="baseline" t={t} />
 
             <p style={p}>
               The problem arises when Sregor imagines the following procedure: (1) choose one
               alternative at random; (2) eliminate that alternative; (3) choose again, at random,
-              one alternative among the remaining ones. With only <KTex math="n-1" /> options,
+              one alternative among the remaining ones. With only <KTex math={String.raw`n-1`} /> options,
               the probability of success on the second guess would <em>seem</em> to be{' '}
-              <KTex math="\tfrac{1}{n-1}" /> — an apparent improvement from{' '}
-              <KTex math="\tfrac{1}{4}" /> to <KTex math="\tfrac{1}{3}" />.
+              <KTex math={String.raw`\tfrac{1}{n-1}`} /> — an apparent improvement from{' '}
+              <KTex math={String.raw`\tfrac{1}{4}`} /> to <KTex math={String.raw`\tfrac{1}{3}`} />.
             </p>
 
             <Pullquote t={t}>
@@ -439,7 +439,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             </Pullquote>
 
             <p style={p}>
-              The reduction from <KTex math="n" /> to <KTex math="n-1" /> alternatives
+              The reduction from <KTex math={String.raw`n`} /> to <KTex math={String.raw`n-1`} /> alternatives
               did not come from real information about the correct answer — it came from a previous
               random choice. To make this explicit, define the events:
             </p>
@@ -455,27 +455,27 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               color: t.textDim,
               lineHeight: 2.2,
             }}>
-              <div><KTex math="E_1" /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
-              <div><KTex math="C_1" /> — first guess is <strong style={{ color: green }}>correct</strong></div>
-              <div><KTex math="C_2" /> — second guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><KTex math={String.raw`E_1`} /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
+              <div><KTex math={String.raw`C_1`} /> — first guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><KTex math={String.raw`C_2`} /> — second guess is <strong style={{ color: green }}>correct</strong></div>
             </div>
 
             <p style={p}>The second guess can only be analyzed conditional on the result of the first:</p>
 
-            <EqBlock math="P(C_2 \mid E_1) = \frac{1}{n-1}" color={green} label="if first was wrong" t={t} />
-            <EqBlock math="P(C_2 \mid C_1) = 0" color={red} label="if first was correct — fatal" t={t} />
+            <EqBlock math={String.raw`P(C_2 \mid E_1) = \frac{1}{n-1}`} color={green} label="if first was wrong" t={t} />
+            <EqBlock math={String.raw`P(C_2 \mid C_1) = 0`} color={red} label="if first was correct — fatal" t={t} />
 
             <p style={p}>Now apply the law of total probability:</p>
 
             <EqBlock
-              math="P(C_2) = \underbrace{P(E_1)}_{\displaystyle\frac{n-1}{n}} \cdot \underbrace{P(C_2 \mid E_1)}_{\displaystyle\frac{1}{n-1}} + \underbrace{P(C_1)}_{\displaystyle\frac{1}{n}} \cdot \underbrace{P(C_2 \mid C_1)}_{\displaystyle 0}"
+              math={String.raw`P(C_2) = \underbrace{P(E_1)}_{\displaystyle\frac{n-1}{n}} \cdot \underbrace{P(C_2 \mid E_1)}_{\displaystyle\frac{1}{n-1}} + \underbrace{P(C_1)}_{\displaystyle\frac{1}{n}} \cdot \underbrace{P(C_2 \mid C_1)}_{\displaystyle 0}`}
               color={gold} label="total probability" t={t}
             />
-            <EqBlock math="P(C_2) = \frac{1}{n}" color={gold} t={t} />
+            <EqBlock math={String.raw`P(C_2) = \frac{1}{n}`} color={gold} t={t} />
 
             <p style={p}>
               The apparent advantage exists only within the subset of cases where the first guess was
-              wrong. But there is a probability of <KTex math="\tfrac{1}{n}" /> that the first
+              wrong. But there is a probability of <KTex math={String.raw`\tfrac{1}{n}`} /> that the first
               guess eliminates precisely the correct alternative — making success impossible. This case
               cancels the apparent gain exactly.
             </p>
@@ -513,13 +513,13 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
                 Theorem 1 — Error Theorem
               </p>
               <p style={{ ...p, fontStyle: 'italic', marginBottom: '1.2rem', textAlign: 'left' }}>
-                In a multiple-choice problem with <KTex math="n" /> equiprobable alternatives,
+                In a multiple-choice problem with <KTex math={String.raw`n`} /> equiprobable alternatives,
                 eliminating one option changes the probability of success{' '}
                 <strong style={{ color: accent }}>if and only if</strong> that elimination is
                 informative — carrying some correlation with the correct answer. If the elimination
                 occurs at random, there is no real probabilistic gain:
               </p>
-              <KTex math="P = \frac{1}{n}" block />
+              <KTex math={String.raw`P = \frac{1}{n}`} block />
             </div>
 
             <p style={p}>The mind tends to confuse two distinct situations:</p>
@@ -576,32 +576,32 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <SectionTitle t={t}>In the language of probability.</SectionTitle>
 
             <p style={p}>
-              Let <KTex math="\Omega = \{1, 2, \dots, n\}" /> be the set of alternatives and{' '}
-              <KTex math="I" /> the random variable indicating the correct one. Assume a uniform prior:
+              Let <KTex math={String.raw`\Omega = \{1, 2, \dots, n\}`} /> be the set of alternatives and{' '}
+              <KTex math={String.raw`I`} /> the random variable indicating the correct one. Assume a uniform prior:
             </p>
 
-            <EqBlock math="P(I = i) = \frac{1}{n}, \qquad i \in \Omega" color={accent} label="prior" t={t} />
+            <EqBlock math={String.raw`P(I = i) = \frac{1}{n}, \qquad i \in \Omega`} color={accent} label="prior" t={t} />
 
             <p style={p}>
-              If the elimination event <KTex math="E" /> is{' '}
+              If the elimination event <KTex math={String.raw`E`} /> is{' '}
               <strong style={{ color: green }}>informative</strong> — implying that alternative{' '}
-              <KTex math="A_k" /> is false — then by symmetry among the remaining alternatives:
+              <KTex math={String.raw`A_k`} /> is false — then by symmetry among the remaining alternatives:
             </p>
 
             <EqBlock
-              math="P(I = i \mid E) = \frac{1}{n-1}, \qquad i \neq k"
+              math={String.raw`P(I = i \mid E) = \frac{1}{n-1}, \qquad i \neq k`}
               color={green} label="informative elimination" t={t}
             />
 
             <p style={p}>
-              If instead <KTex math="E" /> is{' '}
-              <strong style={{ color: red }}>independent of <KTex math="I" /></strong>,
-              then by Bayes' formula — since <KTex math="P(E \mid I=i) = P(E)" /> for
-              all <KTex math="i" /> — the prior is entirely unchanged:
+              If instead <KTex math={String.raw`E`} /> is{' '}
+              <strong style={{ color: red }}>independent of <KTex math={String.raw`I`} /></strong>,
+              then by Bayes' formula — since <KTex math={String.raw`P(E \mid I=i) = P(E)`} /> for
+              all <KTex math={String.raw`i`} /> — the prior is entirely unchanged:
             </p>
 
             <EqBlock
-              math="P(I = i \mid E) = P(I = i) = \frac{1}{n}"
+              math={String.raw`P(I = i \mid E) = P(I = i) = \frac{1}{n}`}
               color={red} label="independent elimination" t={t}
             />
           </Fade>
@@ -616,24 +616,24 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <p style={p}>
               The conceptual structure of the Error Theorem finds a natural parallel in Quantum
               Information Theory. Consider a quantum system prepared in a uniform superposition of{' '}
-              <KTex math="n" /> orthonormal states:
+              <KTex math={String.raw`n`} /> orthonormal states:
             </p>
 
             <EqBlock
-              math="|\psi\rangle = \frac{1}{\sqrt{n}} \sum_{i=1}^{n} |i\rangle"
+              math={String.raw`|\psi\rangle = \frac{1}{\sqrt{n}} \sum_{i=1}^{n} |i\rangle`}
               color={accent} label="quantum superposition" t={t}
             />
 
             <p style={p}>
-              The probability of outcome <KTex math="i" /> is{' '}
-              <KTex math="P(i) = \tfrac{1}{n}" /> — in perfect analogy with the classical
+              The probability of outcome <KTex math={String.raw`i`} /> is{' '}
+              <KTex math={String.raw`P(i) = \tfrac{1}{n}`} /> — in perfect analogy with the classical
               multiple-choice problem. If an{' '}
               <strong style={{ color: green }}>informative projective measurement</strong> discards
-              state <KTex math="|k\rangle" />, the system collapses to:
+              state <KTex math={String.raw`|k\rangle`} />, the system collapses to:
             </p>
 
             <EqBlock
-              math="|\psi'\rangle = \frac{1}{\sqrt{n-1}} \sum_{i \neq k} |i\rangle \quad \Longrightarrow \quad P(i \mid \text{elim. of } k) = \frac{1}{n-1}"
+              math={String.raw`|\psi'\rangle = \frac{1}{\sqrt{n-1}} \sum_{i \neq k} |i\rangle \quad \Longrightarrow \quad P(i \mid \text{elim. of } k) = \frac{1}{n-1}`}
               color={green} label="informative measurement" t={t}
             />
 
@@ -644,7 +644,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               density matrix contains no additional information:
             </p>
 
-            <EqBlock math="P(i \mid E) = \frac{1}{n}" color={red} label="uncorrelated operation" t={t} />
+            <EqBlock math={String.raw`P(i \mid E) = \frac{1}{n}`} color={red} label="uncorrelated operation" t={t} />
 
             <div style={{
               margin: '2rem 0',
