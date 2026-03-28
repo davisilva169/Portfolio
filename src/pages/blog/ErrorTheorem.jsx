@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { InlineMath, BlockMath } from 'react-katex';
-
+import 'katex/dist/katex.min.css';
 import Fade       from '../../components/Fade';
 import BackButton from '../../components/BackButton';
 import pdfFile from './data_blog/The_Error_Theorem.pdf';
