@@ -366,7 +366,7 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <p style={p}>
               He stared at the ceiling as if staring at a cursed system of equations. The first intuition
               was simple: in a question with four alternatives, if he knew nothing, his chance of success
-              was only <InlineMath math="\tfrac{1}{4}" />. If he could eliminate one option, his chance
+              was only <InlineMath math={String.raw`\tfrac{1}{4}`} />. If he could eliminate one option, his chance
               would rise to <InlineMath math="\tfrac{1}{3}" />.
             </p>
             <p style={p}>
