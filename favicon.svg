@@ -1,14 +1,43 @@
-<svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100" height="100" rx="15" fill="#A855F7" />
-  
-  <text 
-    x="50" 
-    y="82" 
-    text-anchor="middle" 
-    font-size="110" 
-    font-weight="900" 
-    font-family="Verdana, sans-serif" 
-    fill="white">
-    λ
-  </text>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradiente com azul mais intenso na direita -->
+    <linearGradient id="lambdaGrad" x1="100" y1="60" x2="420" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A855F7"/>   <!-- roxo -->
+      <stop offset="35%" stop-color="#9333EA"/>  <!-- roxo médio -->
+      <stop offset="65%" stop-color="#6366F1"/>  <!-- transição roxo-azul -->
+      <stop offset="100%" stop-color="#2563EB"/> <!-- azul forte -->
+    </linearGradient>
+
+    <!-- Glow levemente azulado -->
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feColorMatrix type="matrix"
+        values="0 0 0 0 0.2
+                0 0 0 0 0.3
+                0 0 0 0 0.8
+                0 0 0 0.6 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Lambda -->
+  <g filter="url(#glow)">
+    <text 
+      x="256" 
+      y="300"
+      text-anchor="middle"
+      font-size="300"
+      font-weight="700"
+      font-family="Georgia, 'Times New Roman', serif"
+      fill="url(#lambdaGrad)"
+      stroke="#E0E7FF"
+      stroke-opacity="0.25"
+      stroke-width="2"
+      paint-order="stroke fill">
+      λ
+    </text>
+  </g>
 </svg>
