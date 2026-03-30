@@ -5,46 +5,60 @@ import Fade       from '../../components/Fade';
 import BackButton from '../../components/BackButton';
 import pdfFile from './data_blog/The_Error_Theorem.pdf';
 
-/* useKatex: carrega KaTeX JS+CSS via CDN — fora do bundle do Vite */
-function useKatex() {
+/* ─── KaTeX via CDN ─────────────────────────────────────────────────────────
+   Carrega JS+CSS uma única vez e notifica TODOS os componentes KTex via
+   evento customizado — resolve o problema de instâncias montadas antes do
+   script terminar de carregar.
+─────────────────────────────────────────────────────────────────────────── */
+let katexLoadStarted = false;
+function ensureKatex() {
+  if (window.katex || katexLoadStarted) return;
+  katexLoadStarted = true;
+
+  if (!document.getElementById('katex-cdn-css')) {
+    const link = document.createElement('link');
+    link.id   = 'katex-cdn-css';
+    link.rel  = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+    document.head.appendChild(link);
+  }
+
+  const script = document.createElement('script');
+  script.id  = 'katex-cdn-js';
+  script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+  script.onload = () => {
+    // Avisa TODOS os KTex que o KaTeX está pronto
+    window.dispatchEvent(new Event('katex-ready'));
+  };
+  document.head.appendChild(script);
+}
+
+function useKatexReady() {
   const [ready, setReady] = useState(!!window.katex);
   useEffect(() => {
-    if (!document.getElementById('katex-cdn-css')) {
-      const link = document.createElement('link');
-      link.id   = 'katex-cdn-css';
-      link.rel  = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-      document.head.appendChild(link);
-    }
     if (window.katex) { setReady(true); return; }
-    if (document.getElementById('katex-cdn-js')) return;
-    const script = document.createElement('script');
-    script.id    = 'katex-cdn-js';
-    script.src   = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
-    script.async = true;
-    script.onload = () => setReady(true);
-    document.head.appendChild(script);
+    ensureKatex();
+    const handler = () => setReady(true);
+    window.addEventListener('katex-ready', handler);
+    return () => window.removeEventListener('katex-ready', handler);
   }, []);
   return ready;
 }
 
-/* KTex: substitui InlineMath e BlockMath. As strings math chegam intactas
-   ao window.katex.render() — nenhum minificador as processa. */
+/* KTex: renderiza LaTeX via window.katex.render() diretamente no DOM.
+   As strings math nunca passam pelo minificador do Vite. */
 function KTex({ math, block = false, color }) {
   const ref   = useRef(null);
-  const ready = useKatex();
+  const ready = useKatexReady();
+
   useEffect(() => {
-    if (!ready) return;
-    const tryRender = () => {
-      if (window.katex && ref.current) {
-        try {
-          window.katex.render(math, ref.current, { throwOnError: false, displayMode: block });
-          if (color) ref.current.style.color = color;
-        } catch (_) {}
-      } else { setTimeout(tryRender, 80); }
-    };
-    tryRender();
+    if (!ready || !ref.current) return;
+    try {
+      window.katex.render(math, ref.current, { throwOnError: false, displayMode: !!block });
+      if (color) ref.current.style.color = color;
+    } catch (_) {}
   }, [ready, math, block, color]);
+
   return (
     <span
       ref={ref}
@@ -391,7 +405,16 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               that time and logic are against him, Sregor did what remained to a being cornered between
               absurdity and urgency: he <em>thought</em>.
             </p>
+            
+            <Pullquote t={t}>
+              “Maybe I can still make it with ten minutes to spare.”
+            </Pullquote>
 
+            <p style={p}>
+              The idea seemed ridiculous, but no less ridiculous than the very body he was now carrying.
+              With ten minutes to go, he could kick off all the questions. And then came the truly dangerous part: not despair, but hope.
+            </p>
+            
             <Pullquote t={t}>
               "If I am going to get almost everything wrong by chance, maybe I can find a way
               to be wrong more intelligently."

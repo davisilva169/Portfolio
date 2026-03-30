@@ -92,7 +92,14 @@ export default function App() {
       case "UniformFragmentation":
         return <UniformFragmentation t={t} setActive={setActive} />;
       case "PoincareMaps":
-        return <PoincareMaps t={t} setActive={setActive} />;
+        return (
+          <PoincareMaps
+            t={t}
+            setActive={setActive}
+            toggleParticles={setParticlesOn}
+            particlesOn={particlesOn}
+          />
+        );
 
       case "VWPhysics":
         return <VWPhysics t={t} setActive={setActive} />;
