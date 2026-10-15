@@ -1,117 +1,54 @@
-import React, { useState, useEffect, useRef } from 'react';
-// react-katex REMOVIDO — renderiza com window.katex via CDN (imune ao Vite minifier)
+import { useI18n } from "../../i18n/context";import React, { useState, useEffect } from 'react';
+import { KTex } from '../../components/KaTeX';
 
-import Fade       from '../../components/Fade';
+import Fade from '../../components/Fade';
 import BackButton from '../../components/BackButton';
 import pdfFile from './data_blog/The_Error_Theorem.pdf';
 
-/* ─── KaTeX via CDN ─────────────────────────────────────────────────────────
-   Carrega JS+CSS uma única vez e notifica TODOS os componentes KTex via
-   evento customizado — resolve o problema de instâncias montadas antes do
-   script terminar de carregar.
-─────────────────────────────────────────────────────────────────────────── */
-let katexLoadStarted = false;
-function ensureKatex() {
-  if (window.katex || katexLoadStarted) return;
-  katexLoadStarted = true;
-
-  if (!document.getElementById('katex-cdn-css')) {
-    const link = document.createElement('link');
-    link.id   = 'katex-cdn-css';
-    link.rel  = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-    document.head.appendChild(link);
-  }
-
-  const script = document.createElement('script');
-  script.id  = 'katex-cdn-js';
-  script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
-  script.onload = () => {
-    // Avisa TODOS os KTex que o KaTeX está pronto
-    window.dispatchEvent(new Event('katex-ready'));
-  };
-  document.head.appendChild(script);
-}
-
-function useKatexReady() {
-  const [ready, setReady] = useState(!!window.katex);
-  useEffect(() => {
-    if (window.katex) { setReady(true); return; }
-    ensureKatex();
-    const handler = () => setReady(true);
-    window.addEventListener('katex-ready', handler);
-    return () => window.removeEventListener('katex-ready', handler);
-  }, []);
-  return ready;
-}
-
-/* KTex: renderiza LaTeX via window.katex.render() diretamente no DOM.
-   As strings math nunca passam pelo minificador do Vite. */
-function KTex({ math, block = false, color }) {
-  const ref   = useRef(null);
-  const ready = useKatexReady();
-
-  useEffect(() => {
-    if (!ready || !ref.current) return;
-    try {
-      window.katex.render(math, ref.current, { throwOnError: false, displayMode: !!block });
-      if (color) ref.current.style.color = color;
-    } catch (_) {}
-  }, [ready, math, block, color]);
-
-  return (
-    <span
-      ref={ref}
-      style={{ display: block ? 'block' : 'inline-block', margin: block ? '0.6rem 0' : '0 1px' }}
-    />
-  );
-}
-
-
 /* ─── Divisor centralizado ───────────────────────────────────────────────── */
 const Divider = ({ t = {} }) => {
-  const accent = t.accentSolid || t.accent || '#b58cff';
+  const accent = t.accentSolid || t.accent || '#B5651D';
   return (
     <div style={{ margin: '3.5rem auto', width: 50 }}>
       <div style={{
         width: '50px',
         height: '3px',
         background: `linear-gradient(90deg, ${accent} 0%, ${accent}80 55%, transparent 100%)`,
-        borderRadius: '999px',
+        borderRadius: '999px'
       }} />
-    </div>
-  );
+    </div>);
+
 };
 
 /* ─── Label de seção ─────────────────────────────────────────────────────── */
-const SectionLabel = ({ number, label, t }) => (
-  <div style={{ marginBottom: '1rem' }}>
+const SectionLabel = ({ number, label, t }) => {const { tr } = useI18n();return (
+    <div style={{ marginBottom: '1rem' }}>
     <span style={{
-      fontFamily: 'DM Mono, monospace',
-      fontSize: '0.68rem',
-      color: t.accent,
-      letterSpacing: '0.2em',
-      textTransform: 'uppercase',
-      opacity: 0.9,
-    }}>
-      {number < 10 ? `0${number}` : number} · {label}
+        fontFamily: 'DM Mono, monospace',
+        fontSize: '0.68rem',
+        color: t.accent,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        opacity: 0.9
+      }}>
+      {tr(number < 10 ? `0${number}` : number)} · {tr(label)}
     </span>
-  </div>
-);
+  </div>);};
+
 
 /* ─── Título de seção ────────────────────────────────────────────────────── */
-const SectionTitle = ({ children, t }) => (
-  <h2 style={{
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: 'clamp(1.6rem, 2.8vw, 2.1rem)',
-    fontWeight: 600,
-    color: t.text,
-    margin: '0 0 1.4rem',
-    lineHeight: 1.15,
-  }}>
-    {children}
-  </h2>
-);
+const SectionTitle = ({ children, t }) => {const { tr } = useI18n();return (
+    <h2 style={{
+      fontFamily: 'Georgia, Cambria, serif',
+      fontSize: 'clamp(1.6rem, 2.8vw, 2.1rem)',
+      fontWeight: 600,
+      color: t.text,
+      margin: '0 0 1.4rem',
+      lineHeight: 1.15
+    }}>
+    {tr(children)}
+  </h2>);};
+
 
 /* ─── Bloco de equação colorido ─────────────────────────────────────────── */
 /*
@@ -120,33 +57,33 @@ const SectionTitle = ({ children, t }) => (
   Solução: separar em dois divs — o externo cuida do posicionamento/label,
   o interno cuida do overflow do conteúdo matemático.
 */
-const EqBlock = ({ math, color, t, label }) => {
+const EqBlock = ({ math, color, t, label }) => {const { tr } = useI18n();
   const borderColor = color || t.accent;
   return (
     /* Wrapper externo: posicionamento, margem, label flutuante */
     <div style={{
       position: 'relative',
-      margin: label ? '3rem 0 2.5rem' : '2.5rem 0',
+      margin: label ? '3rem 0 2.5rem' : '2.5rem 0'
     }}>
-      {label ? (
-        <span style={{
-          position: 'absolute',
-          top: -11, left: 16,
-          background: borderColor,
-          color: '#06060a',
-          fontSize: '0.6rem',
-          fontFamily: 'DM Mono, monospace',
-          padding: '2px 10px',
-          borderRadius: 20,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          whiteSpace: 'nowrap',
-          zIndex: 1,
-        }}>
-          {label}
-        </span>
-      ) : null}
+      {tr(label ?
+      <span style={{
+        position: 'absolute',
+        top: -11, left: 16,
+        background: borderColor,
+        color: t.bg,
+        fontSize: '0.6rem',
+        fontFamily: 'DM Mono, monospace',
+        padding: '2px 10px',
+        borderRadius: 20,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+        zIndex: 1
+      }}>
+          {tr(label)}
+        </span> :
+      null)}
 
       {/* Inner: visual do bloco + overflow apenas aqui */}
       <div style={{
@@ -155,82 +92,34 @@ const EqBlock = ({ math, color, t, label }) => {
         borderLeft: `3px solid ${borderColor}`,
         borderRadius: '0 8px 8px 0',
         boxShadow: `0 0 20px ${borderColor}14`,
-        overflowX: 'auto',   /* overflow confinado ao inner — label não é cortada */
-        color: t.text,
+        overflowX: 'auto', /* overflow confinado ao inner — label não é cortada */
+        color: t.text
       }}>
         <KTex math={math} block />
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 /* ─── Pullquote ──────────────────────────────────────────────────────────── */
-const Pullquote = ({ children, t }) => (
-  <blockquote style={{
-    margin: '2.5rem 0',
-    padding: '1.2rem 2rem',
-    borderLeft: `2px solid ${t.accent}`,
-    background: `linear-gradient(to right, ${t.accent}0d, transparent)`,
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: '1.3rem',
-    fontStyle: 'italic',
-    color: t.textDim,
-    lineHeight: 1.65,
-  }}>
-    {children}
-  </blockquote>
-);
-
-/* ─── Scroll indicator ───────────────────────────────────────────────────── */
-export const ScrollIndicator = ({ t }) => {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      setVisible(window.scrollY < maxScroll - 120);
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  return (
-    <div style={{
-      position: 'fixed',
-      left: '2.2rem',
-      bottom: '2.5rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '10px',
-      opacity: visible ? 0.55 : 0,
-      transition: 'opacity 0.6s ease',
-      zIndex: 10,
-      pointerEvents: 'none',
+const Pullquote = ({ children, t }) => {const { tr } = useI18n();return (
+    <blockquote style={{
+      margin: '2.5rem 0',
+      padding: '1.2rem 2rem',
+      borderLeft: `2px solid ${t.accent}`,
+      background: `linear-gradient(to right, ${t.accent}0d, transparent)`,
+      fontFamily: 'Georgia, Cambria, serif',
+      fontSize: '1.3rem',
+      fontStyle: 'italic',
+      color: t.textDim,
+      lineHeight: 1.65
     }}>
-      <span style={{
-        fontFamily: "'DM Mono', monospace",
-        fontSize: '0.55rem',
-        letterSpacing: '0.22em',
-        color: t.accentSolid || t.accent,
-        writingMode: 'vertical-rl',
-        textTransform: 'uppercase',
-      }}>
-        scroll
-      </span>
-      <div style={{
-        width: '1px',
-        height: '50px',
-        background: `linear-gradient(to bottom, ${t.accentSolid || t.accent}, transparent)`,
-        animation: 'pulse 2s ease infinite',
-      }} />
-    </div>
-  );
-};
+    {tr(children)}
+  </blockquote>);};
+
 
 /* ─── Botão de partículas ────────────────────────────────────────────────── */
-const ParticleToggle = ({ accent, showParticles, onToggle }) => {
+const ParticleToggle = ({ accent, showParticles, onToggle }) => {const { tr } = useI18n();
   const [hovered, setHovered] = useState(false);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.9rem' }}>
@@ -247,18 +136,18 @@ const ParticleToggle = ({ accent, showParticles, onToggle }) => {
           padding: '5px 12px', cursor: 'pointer',
           letterSpacing: '0.12em', textTransform: 'uppercase',
           transition: 'border-color 0.2s, opacity 0.2s',
-          opacity: hovered ? 1 : 0.75,
-        }}
-      >
+          opacity: hovered ? 1 : 0.75
+        }}>
+
         <span style={{
           width: 6, height: 6, borderRadius: '50%',
           background: showParticles ? accent : 'transparent',
           border: `1px solid ${accent}`,
           display: 'inline-block',
           transition: 'background 0.3s',
-          flexShrink: 0,
+          flexShrink: 0
         }} />
-        {showParticles ? 'particles on' : 'particles off'}
+        {tr(showParticles ? 'particles on' : 'particles off')}
       </button>
 
       {/* "← for better reading" some quando partículas são desligadas */}
@@ -267,17 +156,17 @@ const ParticleToggle = ({ accent, showParticles, onToggle }) => {
         color: accent, letterSpacing: '0.1em',
         opacity: showParticles ? 0.5 : 0,
         transition: 'opacity 0.4s ease',
-        whiteSpace: 'nowrap', pointerEvents: 'none',
-      }}>
-        ← for better reading
+        whiteSpace: 'nowrap', pointerEvents: 'none'
+      }}>{tr("\u2190 for better reading")}
+
       </span>
-    </div>
-  );
+    </div>);
+
 };
 
 /* ─── Componente principal ───────────────────────────────────────────────── */
-const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
-     /* garante o CSS do KaTeX mesmo no GitHub Pages */
+const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {const { tr } = useI18n();
+  /* garante o CSS do KaTeX mesmo no GitHub Pages */
 
   const [showParticles, setShowParticles] = useState(particlesOn !== false);
 
@@ -295,27 +184,26 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
   };
 
   const p = {
-    fontFamily: 'Crimson Text, serif',
+    fontFamily: 'Georgia, Cambria, serif',
     fontSize: '1.25rem',
     color: t.textDim,
     lineHeight: '1.85',
     marginBottom: '1.6rem',
-    textAlign: 'justify',
+    textAlign: 'justify'
   };
 
   const accent = t.accent;
-  const green  = '#34d399';
-  const red    = '#f87171';
-  const gold   = '#fbbf24';
+  const green = t.success;
+  const red = t.error;
+  const gold = t.accentSolid;
 
   return (
     <div style={{ background: t.background, minHeight: '100vh', position: 'relative' }}>
-      <ScrollIndicator t={t} />
 
       <div style={{
         position: 'relative', zIndex: 10,
         display: 'flex', flexDirection: 'column',
-        paddingTop: 'max(10vh, 80px)',
+        paddingTop: 'max(10vh, 80px)'
       }}>
 
         {/* ── Hero ── */}
@@ -323,12 +211,12 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
           <div style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px)', width: '100%' }}>
 
             <div style={{ marginBottom: '0.6rem' }}>
-              <BackButton t={t} onClick={() => setActive('Blog')} label="BACK TO BLOG" />
+              <BackButton t={t} onClick={() => setActive('Blog')} label={tr("BACK TO BLOG")} />
             </div>
 
-            {typeof toggleParticles === 'function' ? (
-              <ParticleToggle accent={accent} showParticles={showParticles} onToggle={handleParticleToggle} />
-            ) : null}
+            {tr(typeof toggleParticles === 'function' ?
+            <ParticleToggle accent={accent} showParticles={showParticles} onToggle={handleParticleToggle} /> :
+            null)}
 
             <div style={{ marginTop: '2rem' }} />
 
@@ -339,42 +227,42 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               padding: '4px 14px', fontSize: '0.68rem',
               fontFamily: 'DM Mono, monospace',
               letterSpacing: '0.14em', textTransform: 'uppercase',
-              marginBottom: '1.2rem',
-            }}>
-              Essay · Probability · Literature
+              marginBottom: '1.2rem'
+            }}>{tr("Essay \xB7 Probability \xB7 Literature")}
+
             </div>
 
             <h1 style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'Georgia, Cambria, serif',
               fontSize: 'clamp(2.4rem, 5vw, 4rem)',
               color: t.text, fontWeight: 500,
               margin: '0 0 1rem', lineHeight: 1.08,
-              letterSpacing: '-0.02em',
-            }}>
-              The Error Theorem
+              letterSpacing: '-0.02em'
+            }}>{tr("The Error Theorem")}
+
             </h1>
 
             <p style={{
-              fontFamily: 'Crimson Text, serif',
+              fontFamily: 'Georgia, Cambria, serif',
               fontSize: '1.15rem', color: t.textDim,
               fontStyle: 'italic', lineHeight: 1.65,
-              margin: '0 0 1.5rem', maxWidth: 580,
-            }}>
-              A small experiment between literature and mathematics — on absurdity, multiple choice,
-              and the dangerous difference between real information and imaginary hope.
+              margin: '0 0 1.5rem', maxWidth: 580
+            }}>{tr("A small experiment between literature and mathematics \u2014 on absurdity, multiple choice, and the dangerous difference between real information and imaginary hope.")}
+
+
             </p>
 
             <div style={{
               display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap',
-              fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: t.textDim,
+              fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: t.textDim
             }}>
-              <span>Davi Silva</span>
+              <span>{tr("Davi Silva")}</span>
               <span style={{ opacity: 0.4 }}>·</span>
-              <span>IFSC-USP</span>
+              <span>{tr("IFSC-USP")}</span>
               <span style={{ opacity: 0.4 }}>·</span>
-              <span>March 2026</span>
+              <span>{tr("March 2026")}</span>
               <span style={{ opacity: 0.4 }}>·</span>
-              <span>~10 min read</span>
+              <span>{tr("~10 min read")}</span>
             </div>
 
             <Divider t={t} />
@@ -382,54 +270,54 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
         </Fade>
 
         {/* ── Conteúdo ── */}
-        <main style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px) 6rem', width: '100%' }}>
+        <article style={{ maxWidth: 850, margin: '0 auto', padding: '0 max(5vw, 20px) 6rem', width: '100%' }}>
 
           {/* §1 */}
           <Fade>
-            <SectionLabel number={1} label="Introduction" t={t} />
-            <SectionTitle t={t}>Imagine.</SectionTitle>
+            <SectionLabel number={1} label={tr("Introduction")} t={t} />
+            <SectionTitle t={t}>{tr("Imagine.")}</SectionTitle>
 
-            <p style={p}>
-              One morning, after waking from troubled dreams and still trapped in bed, Sregor Gamsa
-              discovered that he had been transformed into a monstrous insect. Lying on his back, he
-              looked at the clock ticking on the dresser and felt, with the clarity of a mathematical
-              punishment, that he was already late.
+            <p style={p}>{tr("One morning, after waking from troubled dreams and still trapped in bed, Sregor Gamsa discovered that he had been transformed into a monstrous insect. Lying on his back, he looked at the clock ticking on the dresser and felt, with the clarity of a mathematical punishment, that he was already late.")}
+
+
+
+
             </p>
-            <p style={p}>
-              But that was not the worst of his problems. His real problem was different: that morning
-              there would be a multiple-choice exam in Statistics VI.
+            <p style={p}>{tr("But that was not the worst of his problems. His real problem was different: that morning there would be a multiple-choice exam in Statistics VI.")}
+
+
             </p>
-            <p style={p}>
-              He tried to move. He could not. He tried to convince himself that the world might show
-              some compassion toward the metamorphosed. That also failed. So, like any man who realizes
-              that time and logic are against him, Sregor did what remained to a being cornered between
-              absurdity and urgency: he <em>thought</em>.
+            <p style={p}>{tr("He tried to move. He could not. He tried to convince himself that the world might show some compassion toward the metamorphosed. That also failed. So, like any man who realizes that time and logic are against him, Sregor did what remained to a being cornered between absurdity and urgency: he ")}
+
+
+
+              <em>{tr("thought")}</em>.
             </p>
-            
-            <Pullquote t={t}>
-              “Maybe I can still make it with ten minutes to spare.”
+
+            <Pullquote t={t}>{tr("\u201CMaybe I can still make it with ten minutes to spare.\u201D")}
+
             </Pullquote>
 
-            <p style={p}>
-              The idea seemed ridiculous, but no less ridiculous than the very body he was now carrying.
-              With ten minutes to go, he could kick off all the questions. And then came the truly dangerous part: not despair, but hope.
+            <p style={p}>{tr("The idea seemed ridiculous, but no less ridiculous than the very body he was now carrying. With ten minutes to go, he could kick off all the questions. And then came the truly dangerous part: not despair, but hope.")}
+
+
             </p>
-            
-            <Pullquote t={t}>
-              "If I am going to get almost everything wrong by chance, maybe I can find a way
-              to be wrong more intelligently."
+
+            <Pullquote t={t}>{tr("\"If I am going to get almost everything wrong by chance, maybe I can find a way to be wrong more intelligently.\"")}
+
+
             </Pullquote>
 
-            <p style={p}>
-              He stared at the ceiling as if staring at a cursed system of equations. The first intuition
-              was simple: in a question with four alternatives, if he knew nothing, his chance of success
-              was only <KTex math={String.raw`\tfrac{1}{4}`} />. If he could eliminate one option, his chance
-              would rise to <KTex math={String.raw`\tfrac{1}{3}`} />.
+            <p style={p}>{tr("He stared at the ceiling as if staring at a cursed system of equations. The first intuition was simple: in a question with four alternatives, if he knew nothing, his chance of success was only ")}
+
+
+              <KTex math={String.raw`\tfrac{1}{4}`} />{tr(". If he could eliminate one option, his chance would rise to ")}
+              <KTex math={String.raw`\tfrac{1}{3}`} />.
             </p>
-            <p style={p}>
-              But the human mind is a strange machine. It does not content itself with noticing that
-              chance improves when there is information. Thus was born — or perhaps merely revealed —
-              what we call here the <em style={{ color: accent }}>Error Theorem</em>.
+            <p style={p}>{tr("But the human mind is a strange machine. It does not content itself with noticing that chance improves when there is information. Thus was born \u2014 or perhaps merely revealed \u2014 what we call here the ")}
+
+
+              <em style={{ color: accent }}>{tr("Error Theorem")}</em>.
             </p>
           </Fade>
 
@@ -437,34 +325,34 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
           {/* §2 */}
           <Fade delay={0.1}>
-            <SectionLabel number={2} label="The Problem" t={t} />
-            <SectionTitle t={t}>Where intuition betrays us.</SectionTitle>
+            <SectionLabel number={2} label={tr("The Problem")} t={t} />
+            <SectionTitle t={t}>{tr("Where intuition betrays us.")}</SectionTitle>
 
-            <p style={p}>
-              Consider a multiple-choice question with <KTex math={String.raw`n`} /> alternatives, exactly
-              one of which is correct. Under symmetry, the chance of answering correctly on a single
-              guess is:
+            <p style={p}>{tr("Consider a multiple-choice question with ")}
+              <KTex math={String.raw`n`} />{tr(" alternatives, exactly one of which is correct. Under symmetry, the chance of answering correctly on a single guess is:")}
+
+
             </p>
 
-            <EqBlock math={String.raw`P(\text{correct}) = \frac{1}{n}`} color={accent} label="baseline" t={t} />
+            <EqBlock math={String.raw`P(\text{correct}) = \frac{1}{n}`} color={accent} label={tr("baseline")} t={t} />
 
-            <p style={p}>
-              The problem arises when Sregor imagines the following procedure: (1) choose one
-              alternative at random; (2) eliminate that alternative; (3) choose again, at random,
-              one alternative among the remaining ones. With only <KTex math={String.raw`n-1`} /> options,
-              the probability of success on the second guess would <em>seem</em> to be{' '}
-              <KTex math={String.raw`\tfrac{1}{n-1}`} /> — an apparent improvement from{' '}
-              <KTex math={String.raw`\tfrac{1}{4}`} /> to <KTex math={String.raw`\tfrac{1}{3}`} />.
+            <p style={p}>{tr("The problem arises when Sregor imagines the following procedure: (1) choose one alternative at random; (2) eliminate that alternative; (3) choose again, at random, one alternative among the remaining ones. With only ")}
+
+
+              <KTex math={String.raw`n-1`} />{tr(" options, the probability of success on the second guess would ")}
+              <em>{tr("seem")}</em>{tr(" to be")}{tr(' ')}
+              <KTex math={String.raw`\tfrac{1}{n-1}`} />{tr(" \u2014 an apparent improvement from")}{tr(' ')}
+              <KTex math={String.raw`\tfrac{1}{4}`} />{tr(" to ")}<KTex math={String.raw`\tfrac{1}{3}`} />.
             </p>
 
-            <Pullquote t={t}>
-              But this is exactly where intuition betrays us.
+            <Pullquote t={t}>{tr("But this is exactly where intuition betrays us.")}
+
             </Pullquote>
 
-            <p style={p}>
-              The reduction from <KTex math={String.raw`n`} /> to <KTex math={String.raw`n-1`} /> alternatives
-              did not come from real information about the correct answer — it came from a previous
-              random choice. To make this explicit, define the events:
+            <p style={p}>{tr("The reduction from ")}
+              <KTex math={String.raw`n`} />{tr(" to ")}<KTex math={String.raw`n-1`} />{tr(" alternatives did not come from real information about the correct answer \u2014 it came from a previous random choice. To make this explicit, define the events:")}
+
+
             </p>
 
             <div style={{
@@ -473,38 +361,38 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               background: `${accent}08`,
               border: `1px solid ${accent}30`,
               borderRadius: 8,
-              fontFamily: 'Crimson Text, serif',
+              fontFamily: 'Georgia, Cambria, serif',
               fontSize: '1.15rem',
               color: t.textDim,
-              lineHeight: 2.2,
+              lineHeight: 2.2
             }}>
-              <div><KTex math={String.raw`E_1`} /> — first guess is <strong style={{ color: red }}>wrong</strong></div>
-              <div><KTex math={String.raw`C_1`} /> — first guess is <strong style={{ color: green }}>correct</strong></div>
-              <div><KTex math={String.raw`C_2`} /> — second guess is <strong style={{ color: green }}>correct</strong></div>
+              <div><KTex math={String.raw`E_1`} />{tr(" \u2014 first guess is ")}<strong style={{ color: red }}>{tr("wrong")}</strong></div>
+              <div><KTex math={String.raw`C_1`} />{tr(" \u2014 first guess is ")}<strong style={{ color: green }}>{tr("correct")}</strong></div>
+              <div><KTex math={String.raw`C_2`} />{tr(" \u2014 second guess is ")}<strong style={{ color: green }}>{tr("correct")}</strong></div>
             </div>
 
-            <p style={p}>The second guess can only be analyzed conditional on the result of the first:</p>
+            <p style={p}>{tr("The second guess can only be analyzed conditional on the result of the first:")}</p>
 
-            <EqBlock math={String.raw`P(C_2 \mid E_1) = \frac{1}{n-1}`} color={green} label="if first was wrong" t={t} />
-            <EqBlock math={String.raw`P(C_2 \mid C_1) = 0`} color={red} label="if first was correct — fatal" t={t} />
+            <EqBlock math={String.raw`P(C_2 \mid E_1) = \frac{1}{n-1}`} color={green} label={tr("if first was wrong")} t={t} />
+            <EqBlock math={String.raw`P(C_2 \mid C_1) = 0`} color={red} label={tr("if first was correct — fatal")} t={t} />
 
-            <p style={p}>Now apply the law of total probability:</p>
+            <p style={p}>{tr("Now apply the law of total probability:")}</p>
 
             <EqBlock
               math={String.raw`P(C_2) = \underbrace{P(E_1)}_{\displaystyle\frac{n-1}{n}} \cdot \underbrace{P(C_2 \mid E_1)}_{\displaystyle\frac{1}{n-1}} + \underbrace{P(C_1)}_{\displaystyle\frac{1}{n}} \cdot \underbrace{P(C_2 \mid C_1)}_{\displaystyle 0}`}
-              color={gold} label="total probability" t={t}
-            />
+              color={gold} label={tr("total probability")} t={t} />
+
             <EqBlock math={String.raw`P(C_2) = \frac{1}{n}`} color={gold} t={t} />
 
-            <p style={p}>
-              The apparent advantage exists only within the subset of cases where the first guess was
-              wrong. But there is a probability of <KTex math={String.raw`\tfrac{1}{n}`} /> that the first
-              guess eliminates precisely the correct alternative — making success impossible. This case
-              cancels the apparent gain exactly.
+            <p style={p}>{tr("The apparent advantage exists only within the subset of cases where the first guess was wrong. But there is a probability of ")}
+
+              <KTex math={String.raw`\tfrac{1}{n}`} />{tr(" that the first guess eliminates precisely the correct alternative \u2014 making success impossible. This case cancels the apparent gain exactly.")}
+
+
             </p>
 
-            <Pullquote t={t}>
-              Seeming to reduce the problem is not the same as reducing uncertainty.
+            <Pullquote t={t}>{tr("Seeming to reduce the problem is not the same as reducing uncertainty.")}
+
             </Pullquote>
           </Fade>
 
@@ -512,8 +400,8 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
           {/* §3 */}
           <Fade delay={0.1}>
-            <SectionLabel number={3} label="The Error Theorem" t={t} />
-            <SectionTitle t={t}>The theorem, stated precisely.</SectionTitle>
+            <SectionLabel number={3} label={tr("The Error Theorem")} t={t} />
+            <SectionTitle t={t}>{tr("The theorem, stated precisely.")}</SectionTitle>
 
             <div style={{
               margin: '2rem 0 2.5rem',
@@ -522,72 +410,72 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               border: `1px solid ${accent}55`,
               borderRadius: 10,
               boxShadow: `0 0 36px ${accent}14, inset 0 1px 0 ${accent}20`,
-              position: 'relative', overflow: 'hidden',
+              position: 'relative', overflow: 'hidden'
             }}>
               <div style={{
                 position: 'absolute', top: 0, right: 0, width: 180, height: 180,
                 background: `radial-gradient(circle, ${accent}18, transparent 70%)`,
-                pointerEvents: 'none',
+                pointerEvents: 'none'
               }} />
               <p style={{
                 fontFamily: 'DM Mono, monospace', fontSize: '0.68rem', color: accent,
-                letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 1.2rem',
-              }}>
-                Theorem 1 — Error Theorem
+                letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 1.2rem'
+              }}>{tr("Theorem 1 \u2014 Error Theorem")}
+
               </p>
-              <p style={{ ...p, fontStyle: 'italic', marginBottom: '1.2rem', textAlign: 'left' }}>
-                In a multiple-choice problem with <KTex math={String.raw`n`} /> equiprobable alternatives,
-                eliminating one option changes the probability of success{' '}
-                <strong style={{ color: accent }}>if and only if</strong> that elimination is
-                informative — carrying some correlation with the correct answer. If the elimination
-                occurs at random, there is no real probabilistic gain:
+              <p style={{ ...p, fontStyle: 'italic', marginBottom: '1.2rem', textAlign: 'left' }}>{tr("In a multiple-choice problem with ")}
+                <KTex math={String.raw`n`} />{tr(" equiprobable alternatives, eliminating one option changes the probability of success")}
+                {tr(' ')}
+                <strong style={{ color: accent }}>{tr("if and only if")}</strong>{tr(" that elimination is informative \u2014 carrying some correlation with the correct answer. If the elimination occurs at random, there is no real probabilistic gain:")}
+
+
               </p>
               <KTex math={String.raw`P = \frac{1}{n}`} block />
             </div>
 
-            <p style={p}>The mind tends to confuse two distinct situations:</p>
+            <p style={p}>{tr("The mind tends to confuse two distinct situations:")}</p>
 
             {/* Cards — mesmo fix do EqBlock: label fora do container com overflow */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '3rem 0 2rem' }}>
-              {[
-                {
-                  color: green,
-                  label: 'Case 1 — Informative',
-                  text: <>An alternative is eliminated because <strong style={{ color: green }}>something was learned</strong> about it. The space of possibilities <em>really</em> is reduced.</>
-                },
-                {
-                  color: red,
-                  label: 'Case 2 — Random',
-                  text: <>The elimination occurs as a consequence of a <strong style={{ color: red }}>previous random guess</strong>. The problem was not simplified — merely reorganized.</>
-                },
-              ].map(({ color, label, text }, i) => (
-                <div key={i} style={{ position: 'relative' }}>
+              {tr([
+              {
+                color: green,
+                label: 'Case 1 — Informative',
+                text: <>{tr("An alternative is eliminated because ")}<strong style={{ color: green }}>{tr("something was learned")}</strong>{tr(" about it. The space of possibilities ")}<em>{tr("really")}</em>{tr(" is reduced.")}</>
+              },
+              {
+                color: red,
+                label: 'Case 2 — Random',
+                text: <>{tr("The elimination occurs as a consequence of a ")}<strong style={{ color: red }}>{tr("previous random guess")}</strong>{tr(". The problem was not simplified \u2014 merely reorganized.")}</>
+              }].
+              map(({ color, label, text }, i) =>
+              <div key={i} style={{ position: 'relative' }}>
                   <span style={{
-                    position: 'absolute', top: -11, left: 12,
-                    background: color, color: '#06060a',
-                    fontSize: '0.58rem', fontFamily: 'DM Mono, monospace',
-                    padding: '2px 8px', borderRadius: 20,
-                    letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700,
-                    whiteSpace: 'nowrap', zIndex: 1,
-                  }}>
-                    {label}
+                  position: 'absolute', top: -11, left: 12,
+                  background: color, color: t.bg,
+                  fontSize: '0.58rem', fontFamily: 'DM Mono, monospace',
+                  padding: '2px 8px', borderRadius: 20,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700,
+                  whiteSpace: 'nowrap', zIndex: 1
+                }}>
+                    {tr(label)}
                   </span>
                   <div style={{
-                    padding: '1.6rem 1.6rem 1.4rem',
-                    background: `${color}08`,
-                    border: `1px solid ${color}44`,
-                    borderLeft: `3px solid ${color}`,
-                    borderRadius: '0 8px 8px 0',
-                  }}>
-                    <p style={{ ...p, margin: 0, fontSize: '1.1rem', textAlign: 'left' }}>{text}</p>
+                  padding: '1.6rem 1.6rem 1.4rem',
+                  background: `${color}08`,
+                  border: `1px solid ${color}44`,
+                  borderLeft: `3px solid ${color}`,
+                  borderRadius: '0 8px 8px 0'
+                }}>
+                    <p style={{ ...p, margin: 0, fontSize: '1.1rem', textAlign: 'left' }}>{tr(text)}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <Pullquote t={t}>
-              The first operation can change the mathematics.
-              The second changes only the narrative.
+            <Pullquote t={t}>{tr("The first operation can change the mathematics. The second changes only the narrative.")}
+
+
             </Pullquote>
           </Fade>
 
@@ -595,79 +483,79 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
 
           {/* §4 */}
           <Fade delay={0.1}>
-            <SectionLabel number={4} label="A Formal View" t={t} />
-            <SectionTitle t={t}>In the language of probability.</SectionTitle>
+            <SectionLabel number={4} label={tr("A Formal View")} t={t} />
+            <SectionTitle t={t}>{tr("In the language of probability.")}</SectionTitle>
 
-            <p style={p}>
-              Let <KTex math={String.raw`\Omega = \{1, 2, \dots, n\}`} /> be the set of alternatives and{' '}
-              <KTex math={String.raw`I`} /> the random variable indicating the correct one. Assume a uniform prior:
+            <p style={p}>{tr("Let ")}
+              <KTex math={String.raw`\Omega = \{1, 2, \dots, n\}`} />{tr(" be the set of alternatives and")}{tr(' ')}
+              <KTex math={String.raw`I`} />{tr(" the random variable indicating the correct one. Assume a uniform prior:")}
             </p>
 
-            <EqBlock math={String.raw`P(I = i) = \frac{1}{n}, \qquad i \in \Omega`} color={accent} label="prior" t={t} />
+            <EqBlock math={String.raw`P(I = i) = \frac{1}{n}, \qquad i \in \Omega`} color={accent} label={tr("prior")} t={t} />
 
-            <p style={p}>
-              If the elimination event <KTex math={String.raw`E`} /> is{' '}
-              <strong style={{ color: green }}>informative</strong> — implying that alternative{' '}
-              <KTex math={String.raw`A_k`} /> is false — then by symmetry among the remaining alternatives:
+            <p style={p}>{tr("If the elimination event ")}
+              <KTex math={String.raw`E`} />{tr(" is")}{tr(' ')}
+              <strong style={{ color: green }}>{tr("informative")}</strong>{tr(" \u2014 implying that alternative")}{tr(' ')}
+              <KTex math={String.raw`A_k`} />{tr(" is false \u2014 then by symmetry among the remaining alternatives:")}
             </p>
 
             <EqBlock
               math={String.raw`P(I = i \mid E) = \frac{1}{n-1}, \qquad i \neq k`}
-              color={green} label="informative elimination" t={t}
-            />
+              color={green} label={tr("informative elimination")} t={t} />
 
-            <p style={p}>
-              If instead <KTex math={String.raw`E`} /> is{' '}
-              <strong style={{ color: red }}>independent of <KTex math={String.raw`I`} /></strong>,
-              then by Bayes' formula — since <KTex math={String.raw`P(E \mid I=i) = P(E)`} /> for
-              all <KTex math={String.raw`i`} /> — the prior is entirely unchanged:
+
+            <p style={p}>{tr("If instead ")}
+              <KTex math={String.raw`E`} />{tr(" is")}{tr(' ')}
+              <strong style={{ color: red }}>{tr("independent of ")}<KTex math={String.raw`I`} /></strong>{tr(", then by Bayes' formula \u2014 since ")}
+              <KTex math={String.raw`P(E \mid I=i) = P(E)`} />{tr(" for all ")}
+              <KTex math={String.raw`i`} />{tr(" \u2014 the prior is entirely unchanged:")}
             </p>
 
             <EqBlock
               math={String.raw`P(I = i \mid E) = P(I = i) = \frac{1}{n}`}
-              color={red} label="independent elimination" t={t}
-            />
+              color={red} label={tr("independent elimination")} t={t} />
+
           </Fade>
 
           <Divider t={t} />
 
           {/* §5 */}
           <Fade delay={0.1}>
-            <SectionLabel number={5} label="A Quantum Information Perspective" t={t} />
-            <SectionTitle t={t}>When mechanics makes the distinction unavoidable.</SectionTitle>
+            <SectionLabel number={5} label={tr("A Quantum Information Perspective")} t={t} />
+            <SectionTitle t={t}>{tr("When mechanics makes the distinction unavoidable.")}</SectionTitle>
 
-            <p style={p}>
-              The conceptual structure of the Error Theorem finds a natural parallel in Quantum
-              Information Theory. Consider a quantum system prepared in a uniform superposition of{' '}
-              <KTex math={String.raw`n`} /> orthonormal states:
+            <p style={p}>{tr("The conceptual structure of the Error Theorem finds a natural parallel in Quantum Information Theory. Consider a quantum system prepared in a uniform superposition of")}
+
+              {tr(' ')}
+              <KTex math={String.raw`n`} />{tr(" orthonormal states:")}
             </p>
 
             <EqBlock
               math={String.raw`|\psi\rangle = \frac{1}{\sqrt{n}} \sum_{i=1}^{n} |i\rangle`}
-              color={accent} label="quantum superposition" t={t}
-            />
+              color={accent} label={tr("quantum superposition")} t={t} />
 
-            <p style={p}>
-              The probability of outcome <KTex math={String.raw`i`} /> is{' '}
-              <KTex math={String.raw`P(i) = \tfrac{1}{n}`} /> — in perfect analogy with the classical
-              multiple-choice problem. If an{' '}
-              <strong style={{ color: green }}>informative projective measurement</strong> discards
-              state <KTex math={String.raw`|k\rangle`} />, the system collapses to:
+
+            <p style={p}>{tr("The probability of outcome ")}
+              <KTex math={String.raw`i`} />{tr(" is")}{tr(' ')}
+              <KTex math={String.raw`P(i) = \tfrac{1}{n}`} />{tr(" \u2014 in perfect analogy with the classical multiple-choice problem. If an")}
+              {tr(' ')}
+              <strong style={{ color: green }}>{tr("informative projective measurement")}</strong>{tr(" discards state ")}
+              <KTex math={String.raw`|k\rangle`} />{tr(", the system collapses to:")}
             </p>
 
             <EqBlock
               math={String.raw`|\psi'\rangle = \frac{1}{\sqrt{n-1}} \sum_{i \neq k} |i\rangle \quad \Longrightarrow \quad P(i \mid \text{elim. of } k) = \frac{1}{n-1}`}
-              color={green} label="informative measurement" t={t}
-            />
+              color={green} label={tr("informative measurement")} t={t} />
 
-            <p style={p}>
-              But if the operation is{' '}
-              <strong style={{ color: red }}>uncorrelated with the observable</strong> — a random
-              loss, or a filtering process that does not depend on the correct basis — the effective
-              density matrix contains no additional information:
+
+            <p style={p}>{tr("But if the operation is")}
+              {tr(' ')}
+              <strong style={{ color: red }}>{tr("uncorrelated with the observable")}</strong>{tr(" \u2014 a random loss, or a filtering process that does not depend on the correct basis \u2014 the effective density matrix contains no additional information:")}
+
+
             </p>
 
-            <EqBlock math={String.raw`P(i \mid E) = \frac{1}{n}`} color={red} label="uncorrelated operation" t={t} />
+            <EqBlock math={String.raw`P(i \mid E) = \frac{1}{n}`} color={red} label={tr("uncorrelated operation")} t={t} />
 
             <div style={{
               margin: '2rem 0',
@@ -675,27 +563,27 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
               background: `${accent}08`,
               border: `1px solid ${accent}30`,
               borderRadius: 8,
-              fontFamily: 'Crimson Text, serif',
+              fontFamily: 'Georgia, Cambria, serif',
               fontSize: '1.15rem',
               color: t.textDim,
-              lineHeight: 2.2,
+              lineHeight: 2.2
             }}>
-              <div><span style={{ color: green, fontWeight: 600 }}>Nonzero mutual information</span> with the observable → reduces the system's entropy.</div>
-              <div><span style={{ color: red, fontWeight: 600 }}>Independent operation</span> → does not alter the relevant entropy, even if the apparent state space shrinks.</div>
+              <div><span style={{ color: green, fontWeight: 600 }}>{tr("Nonzero mutual information")}</span>{tr(" with the observable \u2192 reduces the system's entropy.")}</div>
+              <div><span style={{ color: red, fontWeight: 600 }}>{tr("Independent operation")}</span>{tr(" \u2192 does not alter the relevant entropy, even if the apparent state space shrinks.")}</div>
             </div>
 
-            <p style={p}>
-              In both Sregor Gamsa's problem and the quantum setting, the error lies in confusing{' '}
-              <strong style={{ color: red }}>structural reduction of the space</strong> with{' '}
-              <strong style={{ color: green }}>informational reduction of uncertainty</strong>.
-              Quantum mechanics merely makes this distinction unavoidable — it forces us to recognize
-              that information is not a property of what we do to the system, but of what we are able
-              to infer from it.
+            <p style={p}>{tr("In both Sregor Gamsa's problem and the quantum setting, the error lies in confusing")}
+              {tr(' ')}
+              <strong style={{ color: red }}>{tr("structural reduction of the space")}</strong>{tr(" with")}{tr(' ')}
+              <strong style={{ color: green }}>{tr("informational reduction of uncertainty")}</strong>{tr(". Quantum mechanics merely makes this distinction unavoidable \u2014 it forces us to recognize that information is not a property of what we do to the system, but of what we are able to infer from it.")}
+
+
+
             </p>
 
-            <Pullquote t={t}>
-              It is not the transformation of the system that generates information, but the
-              correlation between that transformation and what one wishes to know.
+            <Pullquote t={t}>{tr("It is not the transformation of the system that generates information, but the correlation between that transformation and what one wishes to know.")}
+
+
             </Pullquote>
           </Fade>
 
@@ -706,53 +594,53 @@ const ErrorTheorem = ({ t, setActive, toggleParticles, particlesOn }) => {
             <div style={{
               textAlign: 'center', padding: '3rem 2rem',
               background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${accent}0c, transparent)`,
-              borderRadius: 12,
+              borderRadius: 12
             }}>
               <p style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'Georgia, Cambria, serif',
                 fontSize: '1.5rem', fontStyle: 'italic',
-                color: t.textDim, marginBottom: '2.5rem', lineHeight: 1.65,
-              }}>
-                And Sregor Gamsa? He never made it to the exam.
-                <br />But he had solved a more interesting problem.
+                color: t.textDim, marginBottom: '2.5rem', lineHeight: 1.65
+              }}>{tr("And Sregor Gamsa? He never made it to the exam.")}
+
+                <br />{tr("But he had solved a more interesting problem.")}
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
-                {[
-                  { label: '↓ Download PDF', href: pdfFile, download: true, primary: true },
-                  { label: '↗ GitHub', href: 'https://github.com/davisilva169/The_Error_Theorem', primary: false },
-                ].map(({ label, href, download, primary }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    download={download ? true : undefined}
-                    target={download ? undefined : '_blank'}
-                    rel={download ? undefined : 'noopener noreferrer'}
-                    style={{
-                      padding: '11px 22px',
-                      border: `1px solid ${primary ? accent : accent + '66'}`,
-                      color: primary ? accent : t.textDim,
-                      fontFamily: 'DM Mono, monospace', fontSize: '0.75rem',
-                      letterSpacing: '0.1em', textDecoration: 'none',
-                      borderRadius: 6, textTransform: 'uppercase',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = `${accent}18`; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    {label}
+                {tr([
+                { label: '↓ Download PDF', href: pdfFile, download: true, primary: true },
+                { label: '↗ GitHub', href: 'https://github.com/davisilva169/The_Error_Theorem', primary: false }].
+                map(({ label, href, download, primary }) =>
+                <a
+                  key={label}
+                  href={href}
+                  download={download ? true : undefined}
+                  target={download ? undefined : '_blank'}
+                  rel={download ? undefined : 'noopener noreferrer'}
+                  style={{
+                    padding: '11px 22px',
+                    border: `1px solid ${primary ? accent : accent + '66'}`,
+                    color: primary ? accent : t.textDim,
+                    fontFamily: 'DM Mono, monospace', fontSize: '0.75rem',
+                    letterSpacing: '0.1em', textDecoration: 'none',
+                    borderRadius: 6, textTransform: 'uppercase',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => {e.currentTarget.style.background = `${accent}18`;}}
+                  onMouseLeave={(e) => {e.currentTarget.style.background = 'transparent';}}>
+
+                    {tr(label)}
                   </a>
                 ))}
               </div>
 
-              <BackButton t={t} onClick={() => setActive('Blog')} label="BACK TO BLOG" />
+              <BackButton t={t} onClick={() => setActive('Blog')} label={tr("BACK TO BLOG")} />
             </div>
           </Fade>
 
-        </main>
+        </article>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default ErrorTheorem;

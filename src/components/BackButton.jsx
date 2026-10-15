@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+import { useI18n } from "../i18n/context"; // ─────────────────────────────────────────────────────────────────────────────
 // BACK BUTTON
 // Botão de voltar usado em todas as páginas de detalhe.
 // Props:
@@ -6,30 +6,30 @@
 //   label   → texto do botão (ex: "Back to Research")
 //   t       → objeto de tema
 // ─────────────────────────────────────────────────────────────────────────────
-export default function BackButton({ onClick, label = "Back", t }) {
+export default function BackButton({ onClick, label = "Back", t }) {const { tr } = useI18n();
   return (
     <button
       onClick={onClick}
       style={{
-        background:    "none",
-        border:        "none",
-        cursor:        "pointer",
-        color:         t.accent,
-        fontFamily:    "'DM Mono', monospace",
-        fontSize:      "0.7rem",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: t.accent,
+        fontFamily: "'DM Mono', monospace",
+        fontSize: "0.7rem",
         letterSpacing: "0.15em",
         textTransform: "uppercase",
-        marginBottom:  "3rem",
-        display:       "flex",
-        alignItems:    "center",
-        gap:           "8px",
-        transition:    "color 0.2s",
-        padding:       0,
+        marginBottom: "3rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        transition: "color 0.2s",
+        padding: 0
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = t.accentSolid)}
-      onMouseLeave={(e) => (e.currentTarget.style.color = t.accent)}
-    >
-      ← {label}
-    </button>
-  );
+      onMouseEnter={(e) => e.currentTarget.style.color = t.accentSolid}
+      onMouseLeave={(e) => e.currentTarget.style.color = t.accent}>
+
+      ← {tr(label)}
+    </button>);
+
 }

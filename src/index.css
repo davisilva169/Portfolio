@@ -50,8 +50,14 @@
   }
 }
 
+/* ── Crítico: impede scroll horizontal em qualquer tela ── */
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
+  overflow-x: hidden; /* redundância intencional para cobrir todos os browsers */
 }
 
 #root {

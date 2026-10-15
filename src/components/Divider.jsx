@@ -1,6 +1,6 @@
 /* ─── Divisor centralizado ───────────────────────────────────────────────── */
 export default function Divider({ t = {} }) {
-  const accent = t.accentSolid || t.accent || '#b58cff';
+  const accent = t.accentSolid || t.accent || '#B5651D';
   return (
     <div style={{ margin: '3.5rem auto', width: 50 }}>
       <div style={{

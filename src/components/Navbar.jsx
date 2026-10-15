@@ -1,128 +1,33 @@
-import { useState, useEffect } from "react";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NAVBAR
-// Links centralizados, logo à esquerda, botão de tema à direita.
-// Props:
-//   active    → string com a página atual
-//   setActive → função para navegar
-//   dark      → boolean
-//   setDark   → função para alternar tema
-//   t         → objeto de tema (DARK ou LIGHT)
-// ─────────────────────────────────────────────────────────────────────────────
-const NAV_LINKS = ["Home", "Research", "Projects", "Blog", "About"];
-
-export default function Navbar({ active, setActive, dark, setDark, t }) {
-  const [scrolled, setScrolled] = useState(false);
-
+import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../i18n/context';
+const links = ['Home', 'Research', 'Projects', 'Blog', 'Presentations', 'About'];
+const sections = { MuonPaper: 'Research', UniformFragmentation: 'Research', PoincareMaps: 'Research', VWPhysics: 'Projects', ErrorTheorem: 'Blog' };
+export default function Navbar({ active, setActive, dark, setDark }) {
+  const { language, setLanguage, tr } = useI18n();
+  const [open, setOpen] = useState(false);
+  const menuButton = useRef(null);
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
+    const close = (event) => {
+      if (event.key === 'Escape') {setOpen(false);menuButton.current?.focus();}
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
   }, []);
-
+  const navigate = (page) => {setActive(page);setOpen(false);};
   return (
-    <nav
-      style={{
-        position:       "fixed",
-        top:            0,
-        left:           0,
-        right:          0,
-        zIndex:         100,
-        transition:     "all 0.4s ease",
-        background:     scrolled ? t.navBg : "transparent",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom:   scrolled ? `1px solid ${t.border}` : "none",
-        padding:        "0 2.5rem",
-        height:         "68px",
-        display:        "flex",
-        alignItems:     "center",
-        justifyContent: "space-between",
-      }}
-    >
-      {/* Logo — lado esquerdo */}
-      <div
-        onClick={() => setActive("Home")}
-        style={{
-          fontFamily:    "'Cormorant Garamond', Georgia, serif",
-          fontSize:      "1.35rem",
-          letterSpacing: "0.04em",
-          color:         t.text,
-          cursor:        "pointer",
-          fontWeight:    600,
-          zIndex:        1,
-        }}
-      >
-        λ <span style={{ color: t.accentSolid }}>Physics</span>
-      </div>
+    <header className="site-header">
+      <nav className="site-nav" aria-label={tr("Main navigation")}>
+        <button className="wordmark" onClick={() => navigate('Home')}>{tr("Davi Santos-Silva")}</button>
+        <span className="affiliation">{tr("IFSC \u2014 USP")}</span>
+        <div id="main-navigation" className={`nav-links ${open ? 'is-open' : ''}`}>
+          {tr(links.map((link) => <button key={link} onClick={() => navigate(link)} aria-current={(sections[active] || active) === link ? 'page' : undefined}>{tr(link)}</button>))}
+        </div>
+        <div className="language-switch" role="group" aria-label={tr("Language")}><button lang="pt-BR" aria-label={tr("Português")} aria-pressed={language === 'pt'} onClick={() => setLanguage('pt')}>{tr("PT")}</button><button lang="en" aria-label={tr("English")} aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>{tr("EN")}</button></div>
+        <button className="theme-switch" onClick={() => setDark(!dark)} aria-label={tr(dark ? 'Switch to light theme' : 'Switch to dark theme')} title={tr(dark ? 'Light theme' : 'Dark theme')}>
+          {tr(dark ? <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z" /></svg>)}
+        </button>
+        <button ref={menuButton} className="menu-switch" aria-expanded={open} aria-controls="main-navigation" onClick={() => setOpen(!open)}>{tr(open ? 'Close' : 'Menu')}</button>
+      </nav>
+    </header>);
 
-      {/* Links — centralizados com position absolute */}
-      <div
-        style={{
-          position:   "absolute",
-          left:       "50%",
-          transform:  "translateX(-50%)",
-          display:    "flex",
-          gap:        "2.5rem",
-          alignItems: "center",
-        }}
-      >
-        {NAV_LINKS.map((link) => (
-          <button
-            key={link}
-            onClick={() => setActive(link)}
-            style={{
-              background:    "none",
-              border:        "none",
-              cursor:        "pointer",
-              fontFamily:    "'DM Sans', sans-serif",
-              fontSize:      "0.82rem",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color:         active === link ? t.accentSolid : t.textDim,
-              transition:    "color 0.25s ease",
-              padding:       "4px 0",
-              borderBottom:  active === link
-                ? `1px solid ${t.accentSolid}`
-                : "1px solid transparent",
-            }}
-          >
-            {link}
-          </button>
-        ))}
-      </div>
-
-      {/* Botão de tema — lado direito */}
-      <button
-        onClick={() => setDark(!dark)}
-        title={dark ? "Tema claro" : "Tema escuro"}
-        style={{
-          background:    "none",
-          border:        `1px solid ${t.border}`,
-          cursor:        "pointer",
-          borderRadius:  "20px",
-          padding:       "5px 14px",
-          display:       "flex",
-          alignItems:    "center",
-          gap:           "6px",
-          transition:    "all 0.25s ease",
-          color:         t.textDim,
-          fontSize:      "0.68rem",
-          fontFamily:    "'DM Mono', monospace",
-          letterSpacing: "0.1em",
-          zIndex:        1,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = t.accentSolid;
-          e.currentTarget.style.color       = t.accentSolid;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = t.border;
-          e.currentTarget.style.color       = t.textDim;
-        }}
-      >
-        {dark ? "☀ LIGHT" : "◐ DARK"}
-      </button>
-    </nav>
-  );
 }

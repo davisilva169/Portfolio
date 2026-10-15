@@ -23,9 +23,9 @@ export const RESEARCH = [
     tag:     "High-Energy Astroparticle Physics",
     title:   "Muon Puzzle & Leading Particle Effect",
     excerpt:
-      "Investigating how energy concentration in leader pions alters muon production in cosmic ray cascades.",
+      "Completed thesis on leading-particle effects across five generations, with a multiplicity-weighted null model and an analysis of hybrid-simulation thresholds.",
     year:    "2026",
-    status:  "In Progress",
+    status:  "Completed",
     pageKey: "MuonPaper",
   },
   {

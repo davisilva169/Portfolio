@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useI18n } from "../i18n/context";import { useState } from "react";
 import Fade from "../components/Fade";
 import SectionHeader from "../components/SectionHeader";
 import { POSTS } from "../data/posts";
@@ -8,119 +8,122 @@ import { POSTS } from "../data/posts";
 // Hover: apenas as letras iluminam — sem fundo, sem caixa, sem movimento.
 // Ao clicar, navega para a página de detalhe via pageKey.
 // ─────────────────────────────────────────────────────────────────────────────
-function BlogPostCard({ post, t, setActive }) {
+function BlogPostCard({ post, t, setActive }) {const { tr } = useI18n();
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
+      role="link"
+      tabIndex={0}
+      onKeyDown={(event) => {if (event.key === "Enter") setActive(post.pageKey);}}
       onClick={() => setActive(post.pageKey)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        padding:      "2.2rem 0",
+        padding: "2.2rem 0",
         borderBottom: `1px solid ${t.border}`,
-        cursor:       "pointer",
-        background:   "transparent",
-      }}
-    >
+        cursor: "pointer",
+        background: "transparent"
+      }}>
+
       {/* Metadados */}
       <div
         style={{
-          display:      "flex",
-          gap:          "1.5rem",
-          alignItems:   "center",
+          display: "flex",
+          gap: "1.5rem",
+          alignItems: "center",
           marginBottom: "0.9rem",
-          flexWrap:     "wrap",
-        }}
-      >
+          flexWrap: "wrap"
+        }}>
+
         <span
           style={{
-            fontFamily:    "'DM Mono', monospace",
-            fontSize:      "0.65rem",
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.65rem",
             letterSpacing: "0.15em",
             textTransform: "uppercase",
-            color:         hovered ? t.accentSolid : t.accent,
-            transition:    "color 0.25s",
-          }}
-        >
-          {post.category}
+            color: hovered ? t.accentSolid : t.accent,
+            transition: "color 0.25s"
+          }}>
+
+          {tr(post.category)}
         </span>
         <span style={{ color: t.textMuted, fontSize: "0.7rem" }}>·</span>
         <span
           style={{
-            fontFamily:    "'DM Mono', monospace",
-            fontSize:      "0.62rem",
-            color:         t.textMuted,
-            letterSpacing: "0.08em",
-          }}
-        >
-          {post.date}
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.62rem",
+            color: t.textMuted,
+            letterSpacing: "0.08em"
+          }}>
+
+          {tr(post.date)}
         </span>
         <span style={{ color: t.textMuted, fontSize: "0.7rem" }}>·</span>
         <span
           style={{
-            fontFamily:    "'DM Mono', monospace",
-            fontSize:      "0.62rem",
-            color:         t.textMuted,
-            letterSpacing: "0.08em",
-          }}
-        >
-          {post.readTime} read
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "0.62rem",
+            color: t.textMuted,
+            letterSpacing: "0.08em"
+          }}>
+
+          {tr(post.readTime)}{tr(" read")}
         </span>
       </div>
 
       {/* Título — ilumina no hover */}
       <h3
         style={{
-          fontFamily:   "'Cormorant Garamond', serif",
-          fontSize:     "1.55rem",
-          fontWeight:   600,
-          lineHeight:   1.3,
+          fontFamily: "Georgia, Cambria, serif",
+          fontSize: "1.55rem",
+          fontWeight: 600,
+          lineHeight: 1.3,
           marginBottom: "0.8rem",
-          color:        hovered ? t.text : t.textDim,
-          transition:   "color 0.25s",
-        }}
-      >
-        {post.title}
+          color: hovered ? t.text : t.textDim,
+          transition: "color 0.25s"
+        }}>
+
+        {tr(post.title)}
       </h3>
 
       {/* Excerpt — também ilumina no hover */}
       <p
         style={{
-          fontFamily:  "'DM Sans', sans-serif",
-          fontSize:    "0.88rem",
-          lineHeight:  1.75,
-          maxWidth:    "640px",
-          color:       hovered ? t.textDim : t.textMuted,
-          transition:  "color 0.25s",
-        }}
-      >
-        {post.excerpt}
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.88rem",
+          lineHeight: 1.75,
+          maxWidth: "640px",
+          color: hovered ? t.textDim : t.textMuted,
+          transition: "color 0.25s"
+        }}>
+
+        {tr(post.excerpt)}
       </p>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOG PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-export default function Blog({ t, setActive }) {
+export default function Blog({ t, setActive }) {const { tr } = useI18n();
   return (
     <div
       style={{
-        maxWidth:  "760px",
-        margin:    "0 auto",
-        padding:   "8rem 2rem 6rem",
+        maxWidth: "760px",
+        margin: "0 auto",
+        padding: "8rem 2rem 6rem",
         textAlign: "left",
-        overflow:  "visible",
-      }}
-    >
-      <SectionHeader eyebrow="Writing & Ideas" title="Blog" t={t} />
-      {POSTS.map((p) => (
-        <Fade key={p.id}>
+        overflow: "visible"
+      }}>
+
+      <SectionHeader eyebrow={tr("Writing & Ideas")} title={tr("Blog")} t={t} />
+      {tr(POSTS.map((p) =>
+      <Fade key={p.id}>
           <BlogPostCard post={p} t={t} setActive={setActive} />
         </Fade>
       ))}
-    </div>
-  );
+    </div>);
+
 }
