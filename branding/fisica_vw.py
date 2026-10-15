@@ -8,8 +8,8 @@ Animation:
 Run with the Python environment that has Manim installed.
 """
 from manim import (
-    Scene, Circle, Text, VGroup, FadeOut, FadeIn, Write, Wiggle,
-    DOWN, PI, WHITE, BOLD, config,
+    Scene, Circle, Tex, VGroup, FadeOut, FadeIn, Write, Wiggle,
+    DOWN, PI, WHITE, config,
 )
 import numpy as np
 
@@ -25,8 +25,13 @@ def ring(radius=3.2, width=12):
 
 
 def wordmark():
-    first = Text("Física", font="Cambria", weight=BOLD, font_size=108)
-    second = Text("VW", font="Cambria", weight=BOLD, font_size=108)
+    # Tex uses Computer Modern, independent of the system's default Text font.
+    first = Tex(r"F\'isica", font_size=108)
+    second = Tex("VW", font_size=108)
+    # Match the existing wordmark's width: Tex and Text use different sizing.
+    scale = 3.84 / first.width
+    first.scale(scale)
+    second.scale(scale)
     first.set_color("#FFF5E5")
     second.set_color_by_gradient(["#F2A900", "#B5651D"]).next_to(first, DOWN)
     # One gradient across VW, rather than restarting it inside each letter.
