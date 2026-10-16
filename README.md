@@ -29,6 +29,6 @@ Ao acrescentar um texto, envolva-o em `tr(...)` e adicione a tradução ao dicio
 ## Logo Física VW
 
 A imagem usada no site está em `src/pages/projects/data_projects/Fisica-VW-APOEMA.png`.
-O código reproduzível do Manim está em `branding/fisica_vw.py`, com instruções para exportar uma imagem estática ou a animação. Usa Computer Modern regular, gerada pelo LaTeX do Manim: Física em creme `#FFF5E5`, VW no gradiente `#F2A900 → #B5651D` e anel no gradiente `#B5651D → #F2A900 → #FFE9C7`, sobre `#0A0A0A`.
+O código reproduzível do Manim está em `branding/fisica_vw.py`, com instruções para exportar uma imagem estática ou a animação. Usa exatamente `Text("Física", font_size=108)` e `Text("VW", font_size=108)`, com a fonte padrão do Manim, sem escala adicional e com `next_to(..., DOWN)`: Física em creme `#FFF5E5`, VW no gradiente `#F2A900 → #B5651D` e anel no gradiente `#B5651D → #F2A900 → #FFE9C7`, sobre `#0A0A0A`.
 
 Manim é necessário apenas para gerar a arte, não para compilar o site.
